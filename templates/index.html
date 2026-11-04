@@ -1,0 +1,433 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard – International Currency Exchange Rate Tracker{% endblock %}
+
+{% block hero %}
+<!-- Split-Flap Departure Board Hero Intro Section -->
+<section id="bureauBoardHero" class="bureau-board-hero flap-animated" aria-label="Bureau de Change Live Departure Board">
+    <div class="container">
+        <div class="board-frame">
+            <div class="board-topbar">
+                <div class="board-title-group">
+                    <h2>International Currency Exchange Rate Tracker</h2>
+                    <div class="board-meta">
+                        <span class="live-indicator" aria-hidden="true"></span>
+                        <span>Official Bureau de Change Board &bull; Mid-Market Rates vs INR</span>
+                    </div>
+                </div>
+                <div>
+                    <button type="button" id="skipBoardBtn" class="skip-board-btn" aria-label="Skip departure animation and view rate cards">
+                        Skip to Dashboard &darr;
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-wrap" style="border:none; background:transparent;">
+                <table class="flap-board-table" aria-label="Current Exchange Rates Board">
+                    <thead>
+                        <tr>
+                            <th scope="col">Currency Pair</th>
+                            <th scope="col" class="num-col">Current Rate</th>
+                            <th scope="col" class="num-col">30-Day Average</th>
+                            <th scope="col">Smart Recommendation</th>
+                            <th scope="col">Volatility Index</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="flap-row">
+                            <td class="flap-pair">
+                                <span class="flap-code">USD</span>
+                                <span class="flap-arrow">&rarr;</span>
+                                <span class="flap-quote">INR</span>
+                            </td>
+                            <td class="num-col">
+                                <span class="flap-tile">{{ usd_inr if usd_inr is not none else "N/A" }}</span>
+                            </td>
+                            <td class="num-col flap-avg">
+                                {% if usd_average is not none %}{{ "%.2f"|format(usd_average) }} INR{% else %}N/A{% endif %}
+                            </td>
+                            <td>
+                                <span class="flap-badge {% if 'Buy' in usd_signal %}buy{% elif 'Wait' in usd_signal %}wait{% elif 'Hold' in usd_signal %}hold{% else %}neutral{% endif %}">
+                                    {{ usd_signal }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="flap-avg">{{ usd_volatility_label }}</span>
+                            </td>
+                        </tr>
+
+                        <tr class="flap-row">
+                            <td class="flap-pair">
+                                <span class="flap-code">EUR</span>
+                                <span class="flap-arrow">&rarr;</span>
+                                <span class="flap-quote">INR</span>
+                            </td>
+                            <td class="num-col">
+                                <span class="flap-tile">{{ eur_inr if eur_inr is not none else "N/A" }}</span>
+                            </td>
+                            <td class="num-col flap-avg">
+                                {% if eur_average is not none %}{{ "%.2f"|format(eur_average) }} INR{% else %}N/A{% endif %}
+                            </td>
+                            <td>
+                                <span class="flap-badge {% if 'Buy' in eur_signal %}buy{% elif 'Wait' in eur_signal %}wait{% elif 'Hold' in eur_signal %}hold{% else %}neutral{% endif %}">
+                                    {{ eur_signal }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="flap-avg">{{ eur_volatility_label }}</span>
+                            </td>
+                        </tr>
+
+                        <tr class="flap-row">
+                            <td class="flap-pair">
+                                <span class="flap-code">GBP</span>
+                                <span class="flap-arrow">&rarr;</span>
+                                <span class="flap-quote">INR</span>
+                            </td>
+                            <td class="num-col">
+                                <span class="flap-tile">{{ gbp_inr if gbp_inr is not none else "N/A" }}</span>
+                            </td>
+                            <td class="num-col flap-avg">
+                                {% if gbp_average is not none %}{{ "%.2f"|format(gbp_average) }} INR{% else %}N/A{% endif %}
+                            </td>
+                            <td>
+                                <span class="flap-badge {% if 'Buy' in gbp_signal %}buy{% elif 'Wait' in gbp_signal %}wait{% elif 'Hold' in gbp_signal %}hold{% else %}neutral{% endif %}">
+                                    {{ gbp_signal }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="flap-avg">{{ gbp_volatility_label }}</span>
+                            </td>
+                        </tr>
+
+                        <tr class="flap-row">
+                            <td class="flap-pair">
+                                <span class="flap-code">JPY</span>
+                                <span class="flap-arrow">&rarr;</span>
+                                <span class="flap-quote">INR</span>
+                            </td>
+                            <td class="num-col">
+                                <span class="flap-tile">{{ jpy_inr if jpy_inr is not none else "N/A" }}</span>
+                            </td>
+                            <td class="num-col flap-avg">
+                                {% if jpy_average is not none %}{{ "%.2f"|format(jpy_average) }} INR{% else %}N/A{% endif %}
+                            </td>
+                            <td>
+                                <span class="flap-badge {% if 'Buy' in jpy_signal %}buy{% elif 'Wait' in jpy_signal %}wait{% elif 'Hold' in jpy_signal %}hold{% else %}neutral{% endif %}">
+                                    {{ jpy_signal }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="flap-avg">{{ jpy_volatility_label }}</span>
+                            </td>
+                        </tr>
+
+                        <tr class="flap-row">
+                            <td class="flap-pair">
+                                <span class="flap-code">AED</span>
+                                <span class="flap-arrow">&rarr;</span>
+                                <span class="flap-quote">INR</span>
+                            </td>
+                            <td class="num-col">
+                                <span class="flap-tile">{{ aed_inr if aed_inr is not none else "N/A" }}</span>
+                            </td>
+                            <td class="num-col flap-avg">
+                                {% if aed_average is not none %}{{ "%.2f"|format(aed_average) }} INR{% else %}N/A{% endif %}
+                            </td>
+                            <td>
+                                <span class="flap-badge {% if 'Buy' in aed_signal %}buy{% elif 'Wait' in aed_signal %}wait{% elif 'Hold' in aed_signal %}hold{% else %}neutral{% endif %}">
+                                    {{ aed_signal }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="flap-avg">{{ aed_volatility_label }}</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <a href="#dashboard-rates" id="boardScrollCue" class="board-scroll-cue" aria-label="Scroll to main rates dashboard">
+                <span>Enter Main Dashboard</span>
+                <span class="cue-arrow" aria-hidden="true">&darr;</span>
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block content %}
+<div id="dashboard-rates">
+    <!-- Top Action Bar with Refresh & Timestamp -->
+    <div class="dashboard-actions-bar">
+        <div>
+            <h2 style="font-family: var(--font-display); font-size: 1.5rem; margin: 0; color: var(--ink-forest);">
+                Foreign Exchange Rate Cards
+            </h2>
+            <div class="last-updated-text" style="margin-top: 4px;">
+                <span>🕐</span>
+                <span>Last updated: {{ last_updated }}</span>
+            </div>
+        </div>
+        <div>
+            <a href="/" class="refresh-button">
+                <span>🔄</span>
+                <span>Refresh Rates</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Five Rate Cards Grid -->
+    <div class="dashboard-rates-grid">
+        <!-- USD Card -->
+        <article class="rate-card">
+            <div>
+                <div class="rate-card-header">
+                    <div class="rate-pair-title">
+                        <span>USD</span>
+                        <span style="color:var(--text-muted);">&rarr;</span>
+                        <span>INR</span>
+                    </div>
+                    <span class="flag-badge">United States</span>
+                </div>
+
+                <div class="rate-main">
+                    <div class="rate-big-num rate">{{ usd_inr if usd_inr is not none else "N/A" }}</div>
+                    <div class="rate-currency-label">Indian Rupees per 1 USD</div>
+                </div>
+            </div>
+
+            <div class="rate-card-metrics">
+                <div class="metric-row average-rate">
+                    <span class="metric-label">30-Day Average</span>
+                    <div class="metric-value">
+                        {% if usd_average is not none %}{{ "%.2f"|format(usd_average) }} INR{% else %}N/A{% endif %}
+                    </div>
+                </div>
+
+                <div class="metric-row recommendation">
+                    <span class="metric-label">Smart Recommendation</span>
+                    <div class="badge-recommendation {% if 'Buy' in usd_signal %}status-buy{% elif 'Wait' in usd_signal %}status-wait{% elif 'Hold' in usd_signal %}status-hold{% else %}status-neutral{% endif %}">
+                        {{ usd_signal }}
+                    </div>
+                </div>
+
+                <div class="metric-row volatility">
+                    <span class="metric-label">Volatility Index</span>
+                    <div class="badge-volatility {% if 'Low' in usd_volatility_label %}vol-low{% elif 'Med' in usd_volatility_label %}vol-med{% elif 'High' in usd_volatility_label %}vol-high{% else %}status-neutral{% endif %}">
+                        {{ usd_volatility_label }}
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <!-- EUR Card -->
+        <article class="rate-card">
+            <div>
+                <div class="rate-card-header">
+                    <div class="rate-pair-title">
+                        <span>EUR</span>
+                        <span style="color:var(--text-muted);">&rarr;</span>
+                        <span>INR</span>
+                    </div>
+                    <span class="flag-badge">Eurozone</span>
+                </div>
+
+                <div class="rate-main">
+                    <div class="rate-big-num rate">{{ eur_inr if eur_inr is not none else "N/A" }}</div>
+                    <div class="rate-currency-label">Indian Rupees per 1 EUR</div>
+                </div>
+            </div>
+
+            <div class="rate-card-metrics">
+                <div class="metric-row average-rate">
+                    <span class="metric-label">30-Day Average</span>
+                    <div class="metric-value">
+                        {% if eur_average is not none %}{{ "%.2f"|format(eur_average) }} INR{% else %}N/A{% endif %}
+                    </div>
+                </div>
+
+                <div class="metric-row recommendation">
+                    <span class="metric-label">Smart Recommendation</span>
+                    <div class="badge-recommendation {% if 'Buy' in eur_signal %}status-buy{% elif 'Wait' in eur_signal %}status-wait{% elif 'Hold' in eur_signal %}status-hold{% else %}status-neutral{% endif %}">
+                        {{ eur_signal }}
+                    </div>
+                </div>
+
+                <div class="metric-row volatility">
+                    <span class="metric-label">Volatility Index</span>
+                    <div class="badge-volatility {% if 'Low' in eur_volatility_label %}vol-low{% elif 'Med' in eur_volatility_label %}vol-med{% elif 'High' in eur_volatility_label %}vol-high{% else %}status-neutral{% endif %}">
+                        {{ eur_volatility_label }}
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <!-- GBP Card -->
+        <article class="rate-card">
+            <div>
+                <div class="rate-card-header">
+                    <div class="rate-pair-title">
+                        <span>GBP</span>
+                        <span style="color:var(--text-muted);">&rarr;</span>
+                        <span>INR</span>
+                    </div>
+                    <span class="flag-badge">United Kingdom</span>
+                </div>
+
+                <div class="rate-main">
+                    <div class="rate-big-num rate">{{ gbp_inr if gbp_inr is not none else "N/A" }}</div>
+                    <div class="rate-currency-label">Indian Rupees per 1 GBP</div>
+                </div>
+            </div>
+
+            <div class="rate-card-metrics">
+                <div class="metric-row average-rate">
+                    <span class="metric-label">30-Day Average</span>
+                    <div class="metric-value">
+                        {% if gbp_average is not none %}{{ "%.2f"|format(gbp_average) }} INR{% else %}N/A{% endif %}
+                    </div>
+                </div>
+
+                <div class="metric-row recommendation">
+                    <span class="metric-label">Smart Recommendation</span>
+                    <div class="badge-recommendation {% if 'Buy' in gbp_signal %}status-buy{% elif 'Wait' in gbp_signal %}status-wait{% elif 'Hold' in gbp_signal %}status-hold{% else %}status-neutral{% endif %}">
+                        {{ gbp_signal }}
+                    </div>
+                </div>
+
+                <div class="metric-row volatility">
+                    <span class="metric-label">Volatility Index</span>
+                    <div class="badge-volatility {% if 'Low' in gbp_volatility_label %}vol-low{% elif 'Med' in gbp_volatility_label %}vol-med{% elif 'High' in gbp_volatility_label %}vol-high{% else %}status-neutral{% endif %}">
+                        {{ gbp_volatility_label }}
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <!-- JPY Card -->
+        <article class="rate-card">
+            <div>
+                <div class="rate-card-header">
+                    <div class="rate-pair-title">
+                        <span>JPY</span>
+                        <span style="color:var(--text-muted);">&rarr;</span>
+                        <span>INR</span>
+                    </div>
+                    <span class="flag-badge">Japan</span>
+                </div>
+
+                <div class="rate-main">
+                    <div class="rate-big-num rate">{{ jpy_inr if jpy_inr is not none else "N/A" }}</div>
+                    <div class="rate-currency-label">Indian Rupees per 1 JPY</div>
+                </div>
+            </div>
+
+            <div class="rate-card-metrics">
+                <div class="metric-row average-rate">
+                    <span class="metric-label">30-Day Average</span>
+                    <div class="metric-value">
+                        {% if jpy_average is not none %}{{ "%.2f"|format(jpy_average) }} INR{% else %}N/A{% endif %}
+                    </div>
+                </div>
+
+                <div class="metric-row recommendation">
+                    <span class="metric-label">Smart Recommendation</span>
+                    <div class="badge-recommendation {% if 'Buy' in jpy_signal %}status-buy{% elif 'Wait' in jpy_signal %}status-wait{% elif 'Hold' in jpy_signal %}status-hold{% else %}status-neutral{% endif %}">
+                        {{ jpy_signal }}
+                    </div>
+                </div>
+
+                <div class="metric-row volatility">
+                    <span class="metric-label">Volatility Index</span>
+                    <div class="badge-volatility {% if 'Low' in jpy_volatility_label %}vol-low{% elif 'Med' in jpy_volatility_label %}vol-med{% elif 'High' in jpy_volatility_label %}vol-high{% else %}status-neutral{% endif %}">
+                        {{ jpy_volatility_label }}
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <!-- AED Card -->
+        <article class="rate-card">
+            <div>
+                <div class="rate-card-header">
+                    <div class="rate-pair-title">
+                        <span>AED</span>
+                        <span style="color:var(--text-muted);">&rarr;</span>
+                        <span>INR</span>
+                    </div>
+                    <span class="flag-badge">UAE</span>
+                </div>
+
+                <div class="rate-main">
+                    <div class="rate-big-num rate">{{ aed_inr if aed_inr is not none else "N/A" }}</div>
+                    <div class="rate-currency-label">Indian Rupees per 1 AED</div>
+                </div>
+            </div>
+
+            <div class="rate-card-metrics">
+                <div class="metric-row average-rate">
+                    <span class="metric-label">30-Day Average</span>
+                    <div class="metric-value">
+                        {% if aed_average is not none %}{{ "%.2f"|format(aed_average) }} INR{% else %}N/A{% endif %}
+                    </div>
+                </div>
+
+                <div class="metric-row recommendation">
+                    <span class="metric-label">Smart Recommendation</span>
+                    <div class="badge-recommendation {% if 'Buy' in aed_signal %}status-buy{% elif 'Wait' in aed_signal %}status-wait{% elif 'Hold' in aed_signal %}status-hold{% else %}status-neutral{% endif %}">
+                        {{ aed_signal }}
+                    </div>
+                </div>
+
+                <div class="metric-row volatility">
+                    <span class="metric-label">Volatility Index</span>
+                    <div class="badge-volatility {% if 'Low' in aed_volatility_label %}vol-low{% elif 'Med' in aed_volatility_label %}vol-med{% elif 'High' in aed_volatility_label %}vol-high{% else %}status-neutral{% endif %}">
+                        {{ aed_volatility_label }}
+                    </div>
+                </div>
+            </div>
+        </article>
+    </div>
+
+    <!-- Quick Navigation Hub -->
+    <div style="margin-top: var(--sp-10);">
+        <h3 style="font-family: var(--font-display); font-size: 1.35rem; margin-bottom: var(--sp-4); color: var(--ink-forest);">
+            Analytical Forex Modules
+        </h3>
+        <div class="feature-hub-grid">
+            <a href="/converter" class="hub-card">
+                <div>
+                    <h3>Currency Converter</h3>
+                    <p>Instant conversions between USD, EUR, GBP, JPY, AED and INR with historical spread insights.</p>
+                </div>
+                <div class="hub-card-link">Open Converter &rarr;</div>
+            </a>
+
+            <a href="/history" class="hub-card">
+                <div>
+                    <h3>History & Graphs</h3>
+                    <p>Interactive Chart.js visualizations tracking daily movements and historical monthly data from 2000 to 2026.</p>
+                </div>
+                <div class="hub-card-link">Explore Graphs &rarr;</div>
+            </a>
+
+            <a href="/decision-assistant" class="hub-card">
+                <div>
+                    <h3>Decision Assistant</h3>
+                    <p>Audit bank or money changer exchange quotes, calculate hidden fees, and compare vs reference rates.</p>
+                </div>
+                <div class="hub-card-link">Audit an Offer &rarr;</div>
+            </a>
+
+            <a href="/travel-planner" class="hub-card">
+                <div>
+                    <h3>Travel Planner</h3>
+                    <p>Estimate trip foreign currency requirements and model scenarios if the Rupee moves 5% or 10%.</p>
+                </div>
+                <div class="hub-card-link">Plan Trip Budget &rarr;</div>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

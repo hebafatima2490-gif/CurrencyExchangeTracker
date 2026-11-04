@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}About This Project – International Currency Exchange Rate Tracker{% endblock %}
+
+{% block hero %}
+<div class="page-header">
+    <div class="container">
+        <h1>About This Project</h1>
+        <p class="subtitle">
+            An open, accessible financial intelligence dashboard built to demystify foreign exchange rates, 
+            hidden banking markups, and long-term currency movements against the Indian Rupee.
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 920px; margin: 0 auto;">
+    <article class="card">
+        <h2>Mission & Project Overview</h2>
+        <p style="color: var(--text-primary); font-size: 1.05rem; line-height: 1.6; margin-bottom: var(--sp-4);">
+            The <em>International Currency Exchange Rate Tracker</em> is a web-based platform designed to make
+            currency monitoring and conversion simple and accessible. It allows users to explore the latest available
+            exchange rates for major currencies against the Indian Rupee (INR), convert currencies effortlessly,
+            and analyse historical exchange-rate trends through interactive charts and data tables.
+        </p>
+
+        <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: var(--sp-6);">
+            With integrated data retrieval, historical record tracking, and basic analytical indicators, the platform brings
+            essential currency insights together in one place, helping users better understand exchange-rate movements
+            through a clean and user-friendly interface.
+        </p>
+
+        <div style="display: flex; gap: var(--sp-3); flex-wrap: wrap; margin-bottom: var(--sp-6);">
+            <a href="/history" class="button">
+                📈 View Exchange Rate History
+            </a>
+            <a href="/converter" class="button secondary">
+                Open Currency Converter
+            </a>
+            <a href="/" class="button secondary">
+                &larr; Back to Dashboard
+            </a>
+        </div>
+    </article>
+
+    <div class="card" style="margin-top: var(--sp-6);">
+        <h3>Architectural Pillars & Methodologies</h3>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-5); margin-top: var(--sp-4);">
+            <div style="background: var(--paper-warm); padding: var(--sp-4); border-radius: var(--radius-sm); border: 1px solid var(--engraved-subtle);">
+                <h4 style="color: var(--ink-forest); margin-bottom: 6px;">1. Mid-Market Benchmark Data</h4>
+                <p style="color: var(--text-secondary); font-size: 0.875rem; line-height: 1.5;">
+                    Live rates are retrieved from verified public financial feeds based on European Central Bank (ECB) 
+                    and interbank observations, providing an unskewed baseline free from retail dealer markups.
+                </p>
+            </div>
+
+            <div style="background: var(--paper-warm); padding: var(--sp-4); border-radius: var(--radius-sm); border: 1px solid var(--engraved-subtle);">
+                <h4 style="color: var(--ink-forest); margin-bottom: 6px;">2. 30-Day Volatility & Recommendations</h4>
+                <p style="color: var(--text-secondary); font-size: 0.875rem; line-height: 1.5;">
+                    Daily prices are tracked in SQLite to calculate rolling 30-day moving averages and percentage standard deviations, 
+                    classifying market conditions into Low, Medium, and High Volatility regimes.
+                </p>
+            </div>
+
+            <div style="background: var(--paper-warm); padding: var(--sp-4); border-radius: var(--radius-sm); border: 1px solid var(--engraved-subtle);">
+                <h4 style="color: var(--ink-forest); margin-bottom: 6px;">3. Longitudinal History (2000–2026)</h4>
+                <p style="color: var(--text-secondary); font-size: 0.875rem; line-height: 1.5;">
+                    Over 26 years of monthly exchange rates are indexed and rendered with trend-direction segment coloring, 
+                    allowing exploration across economic cycles and currency milestones.
+                </p>
+            </div>
+
+            <div style="background: var(--paper-warm); padding: var(--sp-4); border-radius: var(--radius-sm); border: 1px solid var(--engraved-subtle);">
+                <h4 style="color: var(--ink-forest); margin-bottom: 6px;">4. Transparent Fee Auditing</h4>
+                <p style="color: var(--text-secondary); font-size: 0.875rem; line-height: 1.5;">
+                    The Forex Decision Assistant evaluates retail quotes against live mid-market benchmarks, decomposing hidden rate 
+                    spreads, fixed fees, commission percentages, and local taxes.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    {% include "_official_resources.html" %}
+</div>
+{% endblock %}
+

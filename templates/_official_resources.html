@@ -1,0 +1,16 @@
+<div class="card" id="official-resources" style="border-left: 4px solid var(--brass-gold);">
+    <h2>Official sources to verify with</h2>
+    <p class="hint">This app is a planning tool. It is not an authorised forex provider and does not
+        sell or exchange currency. Use these official pages to verify what you are told, then confirm
+        current fees, eligibility and availability directly with the provider.</p>
+    <ul class="resources">
+        {% for r in official_resources %}
+        <li>
+            <a href="{{ r.url }}" target="_blank" rel="noopener noreferrer">{{ r.name }}</a>
+            <p>{{ r.note }}</p>
+        </li>
+        {% endfor %}
+    </ul>
+    <p class="muted" style="margin:14px 0 0; font-size: 0.8125rem;">Links last checked on {{ links_checked_on }}. Websites change,
+        so if a page has moved, start from the Reserve Bank of India home page.</p>
+</div>

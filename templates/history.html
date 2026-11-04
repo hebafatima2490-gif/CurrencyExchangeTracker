@@ -1,0 +1,1031 @@
+{% extends "base.html" %}
+
+{% block title %}Exchange Rate History & Analytics – Currency Exchange Tracker{% endblock %}
+
+{% block head %}
+<!-- Chart.js for Historical Graphing -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    /* Historical Graph Specific Layout Rules */
+    .filter-card {
+        background: var(--paper-card);
+        border: 1px solid var(--engraved-border);
+        border-radius: var(--radius-md);
+        padding: var(--sp-6);
+        margin-bottom: var(--sp-6);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: var(--sp-4);
+        align-items: flex-end;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .filter-actions {
+        display: flex;
+        gap: var(--sp-2);
+        align-items: center;
+    }
+
+    .btn-reset {
+        padding: 10px 16px;
+        background: var(--paper-cream);
+        color: var(--text-primary);
+        text-decoration: none;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--engraved-border);
+        font-weight: 600;
+        font-size: 0.875rem;
+        transition: background var(--transition-fast);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-reset:hover {
+        background: var(--engraved-border);
+    }
+
+    .preset-buttons {
+        display: flex;
+        gap: var(--sp-2);
+        flex-wrap: wrap;
+        align-items: center;
+        margin-top: var(--sp-4);
+        padding-top: var(--sp-4);
+        border-top: 1px dashed var(--engraved-border);
+    }
+
+    .preset-btn {
+        background: #ffffff;
+        border: 1px solid var(--engraved-border);
+        color: var(--text-secondary);
+        padding: 6px 12px;
+        border-radius: var(--radius-sm);
+        font-size: 0.8125rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all var(--transition-fast);
+    }
+
+    .preset-btn:hover, .preset-btn.active {
+        background: var(--mint-accent);
+        border-color: var(--mint-hover);
+        color: #ffffff;
+    }
+
+    /* Trend Legends */
+    .trend-legend {
+        display: flex;
+        align-items: center;
+        gap: var(--sp-4);
+        flex-wrap: wrap;
+        padding: var(--sp-3) var(--sp-4);
+        background: var(--paper-warm);
+        border-radius: var(--radius-sm);
+        font-size: 0.8125rem;
+        color: var(--text-secondary);
+        margin-bottom: var(--sp-4);
+        border: 1px solid var(--engraved-subtle);
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 500;
+    }
+
+    .legend-indicator {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    .legend-green { background: #16A34A; }
+    .legend-red { background: #DC2626; }
+    .legend-neutral { background: #64748B; }
+    .legend-missing { background: #d1d5db; border: 1px dashed #9ca3af; }
+
+    .chart-container {
+        position: relative;
+        height: 380px;
+        width: 100%;
+        margin-top: var(--sp-3);
+    }
+
+    .empty-state {
+        padding: var(--sp-10) var(--sp-5);
+        text-align: center;
+        color: var(--text-muted);
+        background: var(--paper-warm);
+        border-radius: var(--radius-md);
+        border: 1px dashed var(--engraved-border);
+    }
+
+    /* Year Navigation Toolbar */
+    .year-nav-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: var(--sp-3);
+        background: var(--paper-warm);
+        padding: var(--sp-4) var(--sp-5);
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--engraved-subtle);
+        margin-bottom: var(--sp-5);
+    }
+
+    .year-controls-main {
+        display: flex;
+        align-items: center;
+        gap: var(--sp-2);
+    }
+
+    .nav-year-btn {
+        padding: 8px 14px;
+        background: #ffffff;
+        border: 1px solid var(--engraved-border);
+        border-radius: var(--radius-sm);
+        color: var(--text-primary);
+        font-weight: 600;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all var(--transition-fast);
+    }
+
+    .nav-year-btn:hover:not(:disabled) {
+        background: var(--mint-accent);
+        color: #ffffff;
+        border-color: var(--mint-hover);
+    }
+
+    .nav-year-btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+    }
+
+    .year-select-wrapper select {
+        padding: 8px 14px;
+        font-weight: 700;
+        min-width: 120px;
+    }
+
+    .quick-years {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .quick-year-pill {
+        padding: 5px 10px;
+        border-radius: var(--radius-sm);
+        font-size: 0.75rem;
+        font-weight: 600;
+        background: #ffffff;
+        border: 1px solid var(--engraved-border);
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all var(--transition-fast);
+    }
+
+    .quick-year-pill:hover, .quick-year-pill.active {
+        background: var(--mint-accent);
+        color: #ffffff;
+        border-color: var(--mint-hover);
+    }
+
+    /* Summary Grid */
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: var(--sp-3);
+        margin-bottom: var(--sp-5);
+    }
+
+    .summary-card {
+        background: #ffffff;
+        border: 1px solid var(--engraved-border);
+        border-radius: var(--radius-sm);
+        padding: var(--sp-3) var(--sp-4);
+        border-left: 4px solid var(--mint-accent);
+    }
+
+    .summary-card.high { border-left-color: #16A34A; }
+    .summary-card.low { border-left-color: #DC2626; }
+    .summary-card.avg { border-left-color: var(--brass-gold); }
+    .summary-card.coverage { border-left-color: #7c3aed; }
+
+    .summary-card .label {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        margin-bottom: 3px;
+    }
+
+    .summary-card .value {
+        font-family: var(--font-mono);
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--ink-forest);
+    }
+
+    .summary-card .subtext {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        margin-top: 2px;
+    }
+
+    /* Loading Overlay */
+    .loading-overlay {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(247, 246, 241, 0.85);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        border-radius: var(--radius-sm);
+        z-index: 10;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity var(--transition-fast);
+    }
+
+    .loading-overlay.active {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .spinner {
+        width: 36px;
+        height: 36px;
+        border: 3px solid var(--engraved-border);
+        border-top: 3px solid var(--mint-accent);
+        border-radius: 50%;
+        animation: spin 0.75s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}
+
+{% block hero %}
+<div class="page-header">
+    <div class="container">
+        <h1>Exchange Rate History & Analytics</h1>
+        <p class="subtitle">
+            Longitudinal market trends, daily currency observations, and verified historical averages for 
+            {{ selected_currency }} against the Indian Rupee (INR).
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- FILTER CONTROLS FOR DYNAMIC GRAPH -->
+<div class="card filter-card">
+    <form id="filterForm" method="GET" action="/history">
+        <div class="filter-grid">
+            <div class="filter-group">
+                <label for="currency"><strong>Select Currency:</strong></label>
+                <select id="currency" name="currency" onchange="changeCurrency()">
+                    {% for c in currencies %}
+                    <option value="{{ c }}" {% if c == selected_currency %}selected{% endif %}>
+                        {{ c }} → INR
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="start_date"><strong>Start Date:</strong></label>
+                <input type="date" id="start_date" name="start_date" value="{{ start_date }}" 
+                       {% if min_date %}min="{{ min_date }}"{% endif %} 
+                       {% if max_date %}max="{{ max_date }}"{% endif %}>
+            </div>
+
+            <div class="filter-group">
+                <label for="end_date"><strong>End Date:</strong></label>
+                <input type="date" id="end_date" name="end_date" value="{{ end_date }}" 
+                       {% if min_date %}min="{{ min_date }}"{% endif %} 
+                       {% if max_date %}max="{{ max_date }}"{% endif %}>
+            </div>
+
+            <div class="filter-actions">
+                <button type="submit" class="btn-primary">Filter</button>
+                {% if start_date or end_date %}
+                <a href="/history?currency={{ selected_currency }}" class="btn-reset">Reset</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="preset-buttons">
+            <span style="font-size: 0.8125rem; font-weight: 600; color: var(--text-muted); margin-right: 4px;">
+                Quick Range:
+            </span>
+            <button type="button" class="preset-btn" onclick="applyQuickRange('7d')">Last 7 Days</button>
+            <button type="button" class="preset-btn" onclick="applyQuickRange('30d')">Last 30 Days</button>
+            <button type="button" class="preset-btn" onclick="applyQuickRange('60d')">Last 60 Days</button>
+            <button type="button" class="preset-btn" onclick="applyQuickRange('all')">All Records</button>
+        </div>
+    </form>
+</div>
+
+{% if date_error %}
+<div class="alert-error" role="alert">
+    <span>⚠️</span>
+    <div><strong>Error:</strong> {{ date_error }}</div>
+</div>
+{% endif %}
+
+<!-- GRAPH 1: DYNAMIC EXCHANGE RATE GRAPH (RECENT MOVEMENTS) -->
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--sp-4); flex-wrap: wrap; gap: var(--sp-2);">
+        <h2 style="margin: 0; font-size: 1.35rem;">
+            <span>📈</span>
+            <span>{{ selected_currency }} → INR Exchange Rate</span>
+        </h2>
+        <span class="flag-badge">Daily Movements</span>
+    </div>
+
+    <div class="trend-legend">
+        <span style="font-weight: 600; color: var(--text-primary);">Trend Indicator:</span>
+        <div class="legend-item">
+            <span class="legend-indicator legend-green"></span>
+            <span>Green: Rate Increased vs Previous Day</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-indicator legend-red"></span>
+            <span>Red: Rate Decreased vs Previous Day</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-indicator legend-neutral"></span>
+            <span>Neutral: Rate Unchanged / First Day</span>
+        </div>
+    </div>
+
+    {% if history and history|length > 0 %}
+    <div class="chart-container">
+        <canvas id="exchangeChart"></canvas>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>📊 No exchange-rate records available for the selected criteria.</p>
+        <p style="font-size: 0.875rem; color: var(--text-muted); margin-top: 4px;">
+            Try adjusting your start and end dates or click Reset to view all records.
+        </p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- GRAPH 2: HISTORICAL MONTHLY EXCHANGE RATE GRAPH (2000 - 2026) -->
+<div class="card" id="historicalSection">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--sp-4); flex-wrap: wrap; gap: var(--sp-3);">
+        <div>
+            <h2 id="historicalGraphTitle" style="font-size: 1.35rem; margin-bottom: 4px;">
+                <span>🏛️</span>
+                <span>{{ selected_currency }} to INR — Monthly Average Exchange Rates — {{ selected_year }}</span>
+            </h2>
+            <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary);">
+                Long-term historical trend exploration from 2000 to 2026 based on verified daily market observations
+            </p>
+        </div>
+        <span class="flag-badge" style="background: rgba(179, 130, 33, 0.12); color: var(--brass-gold); border-color: rgba(179, 130, 33, 0.3);">
+            Historical Analysis (2000–2026)
+        </span>
+    </div>
+
+    <!-- Historical Year Navigation Toolbar -->
+    <div class="year-nav-toolbar">
+        <div class="year-controls-main">
+            <button type="button" id="prevYearBtn" class="nav-year-btn" onclick="navigateYear(-1)">
+                ◀ Prev Year
+            </button>
+
+            <div class="year-select-wrapper">
+                <select id="yearSelect" onchange="onYearDropdownChange()">
+                    {% for y in years %}
+                    <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>
+                        Year {{ y }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <button type="button" id="nextYearBtn" class="nav-year-btn" onclick="navigateYear(1)">
+                Next Year ▶
+            </button>
+        </div>
+
+        <div class="quick-years">
+            <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-right: 4px;">Milestones:</span>
+            <button type="button" class="quick-year-pill {% if selected_year == 2000 %}active{% endif %}" onclick="selectYear(2000)">2000</button>
+            <button type="button" class="quick-year-pill {% if selected_year == 2005 %}active{% endif %}" onclick="selectYear(2005)">2005</button>
+            <button type="button" class="quick-year-pill {% if selected_year == 2010 %}active{% endif %}" onclick="selectYear(2010)">2010</button>
+            <button type="button" class="quick-year-pill {% if selected_year == 2015 %}active{% endif %}" onclick="selectYear(2015)">2015</button>
+            <button type="button" class="quick-year-pill {% if selected_year == 2020 %}active{% endif %}" onclick="selectYear(2020)">2020</button>
+            <button type="button" class="quick-year-pill {% if selected_year == 2025 %}active{% endif %}" onclick="selectYear(2025)">2025</button>
+            <button type="button" class="quick-year-pill {% if selected_year == 2026 %}active{% endif %}" onclick="selectYear(2026)">2026</button>
+        </div>
+    </div>
+
+    <!-- Historical Color Legend -->
+    <div class="trend-legend">
+        <span style="font-weight: 600; color: var(--text-primary);">Historical Color Rules:</span>
+        <div class="legend-item">
+            <span class="legend-indicator legend-green"></span>
+            <span>Green (#16A34A): Monthly Average Increased vs Previous Month</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-indicator legend-red"></span>
+            <span>Red (#DC2626): Monthly Average Decreased vs Previous Month</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-indicator legend-neutral"></span>
+            <span>Neutral (#64748B): First Available Month / No Change</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-indicator legend-missing"></span>
+            <span>Gap: Missing / Future Month Data (Not Interpolated)</span>
+        </div>
+    </div>
+
+    <!-- Historical Data Summary Box -->
+    <div id="summaryContainer">
+        {% if monthly_data and monthly_data.has_data and monthly_data.summary %}
+        {% set s = monthly_data.summary %}
+        <div class="summary-grid">
+            <div class="summary-card">
+                <div class="label">Currency Pair</div>
+                <div class="value">{{ s.currency_pair }}</div>
+                <div class="subtext">Year: <strong>{{ s.year }}</strong></div>
+            </div>
+
+            <div class="summary-card high">
+                <div class="label">Highest Monthly Average</div>
+                <div class="value">{{ "%.2f"|format(s.highest_average) }} INR</div>
+                <div class="subtext">Peak Month: <strong>{{ s.highest_month }}</strong></div>
+            </div>
+
+            <div class="summary-card low">
+                <div class="label">Lowest Monthly Average</div>
+                <div class="value">{{ "%.2f"|format(s.lowest_average) }} INR</div>
+                <div class="subtext">Trough Month: <strong>{{ s.lowest_month }}</strong></div>
+            </div>
+
+            <div class="summary-card avg">
+                <div class="label">Yearly Average of Averages</div>
+                <div class="value">{{ "%.2f"|format(s.average_of_averages) }} INR</div>
+                <div class="subtext">Across available months</div>
+            </div>
+
+            <div class="summary-card coverage">
+                <div class="label">Data Coverage</div>
+                <div class="value">{{ s.available_months }} / {{ s.total_months }} Months</div>
+                <div class="subtext">
+                    {% if s.is_complete_year %}
+                    🟢 Complete 12 Months
+                    {% else %}
+                    🟡 Partial Year ({{ 12 - s.available_months }} missing)
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="summary-card">
+                <div class="label">Start vs End Average</div>
+                <div class="value">{{ "%.2f"|format(s.first_average) }} → {{ "%.2f"|format(s.last_average) }}</div>
+                <div class="subtext">{{ s.first_month }} to {{ s.last_month }}</div>
+            </div>
+        </div>
+        {% else %}
+        <div class="empty-state" style="margin-bottom: var(--sp-4);">
+            <p>⚠️ No historical monthly average records available for {{ selected_year }}.</p>
+            <p style="font-size: 0.8125rem; color: var(--text-muted);">Historical data for this period may be unavailable or unrecorded.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Historical Chart Canvas Container with Spinner -->
+    <div class="chart-container" style="position: relative;">
+        <div id="chartLoadingOverlay" class="loading-overlay">
+            <div class="spinner"></div>
+            <div style="margin-top: 10px; font-weight: 600; font-size: 0.875rem; color: var(--ink-forest);">
+                Loading Historical Data...
+            </div>
+        </div>
+        <canvas id="monthlyChart"></canvas>
+    </div>
+</div>
+
+<!-- TABLE FOR RECENT HISTORICAL DATA -->
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--sp-4);">
+        <h2>📋 Historical Data ({{ history|length }} {% if history|length == 1 %}record{% else %}records{% endif %})</h2>
+    </div>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th scope="col">Date</th>
+                    <th scope="col">Currency Pair</th>
+                    <th scope="col" class="num">Exchange Rate</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if history and history|length > 0 %}
+                {% for date, rate in history %}
+                <tr>
+                    <td>{{ date }}</td>
+                    <td>{{ selected_currency }} → INR</td>
+                    <td class="num">{{ rate }}</td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                <tr>
+                    <td colspan="3" class="no-records-cell" style="text-align:center; padding: 25px; color: var(--text-muted);">
+                        ⚠️ No exchange-rate records found for the selected date range.
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <div style="margin-top: var(--sp-5);">
+        <a href="/" class="button secondary back-link">
+            &larr; Back to Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // ==========================================
+    // 1. DATA PREPARATION FOR GRAPH 1 (DYNAMIC)
+    // ==========================================
+    const dates = [
+        {% for date, rate in history %}
+        "{{ date }}",
+        {% endfor %}
+    ];
+
+    const rates = [
+        {% for date, rate in history %}
+        {{ rate }},
+        {% endfor %}
+    ];
+
+    let dynamicChart = null;
+    const chartCanvas = document.getElementById("exchangeChart");
+
+    if (chartCanvas && dates.length > 0) {
+        const ctx = chartCanvas.getContext("2d");
+
+        dynamicChart = new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: dates,
+                datasets: [{
+                    label: "{{ selected_currency }} → INR Daily Rate",
+                    data: rates,
+                    borderColor: "#155239",
+                    backgroundColor: "rgba(21, 82, 57, 0.06)",
+                    borderWidth: 2.5,
+                    tension: 0.25,
+                    fill: true,
+                    segment: {
+                        borderColor: function (ctx) {
+                            if (!ctx.p0 || !ctx.p1) return "#155239";
+                            if (ctx.p1.parsed.y > ctx.p0.parsed.y) {
+                                return "#16A34A"; // Rate increased (Green)
+                            } else if (ctx.p1.parsed.y < ctx.p0.parsed.y) {
+                                return "#DC2626"; // Rate decreased (Red)
+                            } else {
+                                return "#64748B"; // Rate unchanged (Neutral Slate)
+                            }
+                        }
+                    },
+                    pointBackgroundColor: function (context) {
+                        const index = context.dataIndex;
+                        const d = context.dataset.data;
+                        if (index === 0) return "#64748B";
+                        if (d[index] > d[index - 1]) return "#16A34A";
+                        if (d[index] < d[index - 1]) return "#DC2626";
+                        return "#64748B";
+                    },
+                    pointBorderColor: function (context) {
+                        const index = context.dataIndex;
+                        const d = context.dataset.data;
+                        if (index === 0) return "#64748B";
+                        if (d[index] > d[index - 1]) return "#16A34A";
+                        if (d[index] < d[index - 1]) return "#DC2626";
+                        return "#64748B";
+                    },
+                    pointRadius: dates.length > 40 ? 3 : 5,
+                    pointHoverRadius: 7
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: "top",
+                        labels: { font: { family: "'Plus Jakarta Sans', sans-serif", weight: "600" } }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                const index = context.dataIndex;
+                                const curr = context.parsed.y;
+                                let changeText = "";
+                                if (index > 0) {
+                                    const prev = context.dataset.data[index - 1];
+                                    const diff = curr - prev;
+                                    const pct = ((diff / prev) * 100).toFixed(2);
+                                    const sign = diff > 0 ? "+" : "";
+                                    const arrow = diff > 0 ? "▲ " : (diff < 0 ? "▼ " : "— ");
+                                    changeText = " (" + arrow + sign + diff.toFixed(3) + " INR, " + sign + pct + "%)";
+                                }
+                                return "{{ selected_currency }} → INR: " + curr.toFixed(3) + " INR" + changeText;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        title: {
+                            display: true,
+                            text: "Exchange Rate (INR)",
+                            font: { family: "'Plus Jakarta Sans', sans-serif", weight: "600" }
+                        },
+                        grid: { color: "rgba(222, 217, 205, 0.4)" }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: "Observation Date",
+                            font: { family: "'Plus Jakarta Sans', sans-serif", weight: "600" }
+                        },
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    }
+
+    // ==========================================
+    // 2. DATA PREPARATION FOR GRAPH 2 (HISTORICAL 2000-2026)
+    // ==========================================
+    let currentYear = {{ selected_year }};
+    const currentCurrency = "{{ selected_currency }}";
+
+    const initialMonthlyData = {
+        labels: {{ monthly_data.labels|tojson if monthly_data else ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]|tojson }},
+        month_names: {{ monthly_data.month_names|tojson if monthly_data else []|tojson }},
+        rates: {{ monthly_data.rates|tojson if monthly_data else []|tojson }},
+        counts: {{ monthly_data.counts|tojson if monthly_data else []|tojson }},
+        trends: {{ monthly_data.trends|tojson if monthly_data else []|tojson }},
+        colors: {{ monthly_data.colors|tojson if monthly_data else []|tojson }},
+        summary: {{ monthly_data.summary|tojson if (monthly_data and monthly_data.summary) else "null" }}
+    };
+
+    let monthlyChart = null;
+    const monthlyCanvas = document.getElementById("monthlyChart");
+
+    function createOrUpdateMonthlyChart(labels, rates, counts, currency, year) {
+        if (!monthlyCanvas) return;
+        const ctx = monthlyCanvas.getContext("2d");
+
+        const pointColors = rates.map((r, i) => {
+            if (r === null) return "transparent";
+            let prev = null;
+            for (let j = i - 1; j >= 0; j--) {
+                if (rates[j] !== null) {
+                    prev = rates[j];
+                    break;
+                }
+            }
+            if (prev === null) return "#64748B";
+            if (r > prev) return "#16A34A";
+            if (r < prev) return "#DC2626";
+            return "#64748B";
+        });
+
+        if (monthlyChart) {
+            monthlyChart.data.labels = labels;
+            monthlyChart.data.datasets[0].label = currency + " → INR Monthly Average (" + year + ")";
+            monthlyChart.data.datasets[0].data = rates;
+            monthlyChart.data.datasets[0].counts = counts;
+            monthlyChart.data.datasets[0].pointBackgroundColor = pointColors;
+            monthlyChart.data.datasets[0].pointBorderColor = pointColors;
+            monthlyChart.update();
+            return;
+        }
+
+        monthlyChart = new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: currency + " → INR Monthly Average (" + year + ")",
+                    data: rates,
+                    counts: counts,
+                    borderColor: "#155239",
+                    backgroundColor: "rgba(21, 82, 57, 0.05)",
+                    borderWidth: 3,
+                    tension: 0.25,
+                    fill: false,
+                    spanGaps: false,
+                    segment: {
+                        borderColor: function (ctx) {
+                            if (!ctx.p0 || !ctx.p1) return "#155239";
+                            const y0 = ctx.p0.parsed.y;
+                            const y1 = ctx.p1.parsed.y;
+                            if (y1 > y0) return "#16A34A";
+                            if (y1 < y0) return "#DC2626";
+                            return "#64748B";
+                        }
+                    },
+                    pointBackgroundColor: pointColors,
+                    pointBorderColor: pointColors,
+                    pointRadius: 6,
+                    pointHoverRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: "top",
+                        labels: { font: { family: "'Plus Jakarta Sans', sans-serif", weight: "600" } }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                const idx = context.dataIndex;
+                                const val = context.parsed.y;
+                                if (val === null) return "No data recorded";
+                                const prevMonth = findPrevMonthValue(context.dataset.data, idx);
+                                let diffText = "";
+                                if (prevMonth !== null) {
+                                    const diff = val - prevMonth;
+                                    const pct = ((diff / prevMonth) * 100).toFixed(2);
+                                    const sign = diff > 0 ? "+" : "";
+                                    const arrow = diff > 0 ? "▲ " : (diff < 0 ? "▼ " : "— ");
+                                    diffText = " (" + arrow + sign + diff.toFixed(3) + " INR, " + sign + pct + "%)";
+                                }
+                                return "Average: " + val.toFixed(3) + " INR" + diffText;
+                            },
+                            afterLabel: function (context) {
+                                const idx = context.dataIndex;
+                                const cnt = context.dataset.counts ? context.dataset.counts[idx] : 0;
+                                if (cnt > 0) {
+                                    return "Calculated from " + cnt + " actual daily observations";
+                                }
+                                return "No observations recorded";
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        title: {
+                            display: true,
+                            text: "Monthly Average Rate (INR)",
+                            font: { family: "'Plus Jakarta Sans', sans-serif", weight: "600" }
+                        },
+                        grid: { color: "rgba(222, 217, 205, 0.4)" }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: "Month",
+                            font: { family: "'Plus Jakarta Sans', sans-serif", weight: "600" }
+                        },
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    }
+
+    function findPrevMonthValue(dataArray, currentIndex) {
+        for (let i = currentIndex - 1; i >= 0; i--) {
+            if (dataArray[i] !== null && dataArray[i] !== undefined) {
+                return dataArray[i];
+            }
+        }
+        return null;
+    }
+
+    if (initialMonthlyData.labels && initialMonthlyData.rates) {
+        createOrUpdateMonthlyChart(
+            initialMonthlyData.labels,
+            initialMonthlyData.rates,
+            initialMonthlyData.counts,
+            currentCurrency,
+            currentYear
+        );
+    }
+
+    // ==========================================
+    // 3. YEAR NAVIGATION & DYNAMIC LOADING LOGIC
+    // ==========================================
+    function updateNavButtonStates(year) {
+        const prevBtn = document.getElementById("prevYearBtn");
+        const nextBtn = document.getElementById("nextYearBtn");
+        if (prevBtn) prevBtn.disabled = (year <= 2000);
+        if (nextBtn) nextBtn.disabled = (year >= 2026);
+
+        document.querySelectorAll(".quick-year-pill").forEach(pill => {
+            if (parseInt(pill.textContent.trim()) === year) {
+                pill.classList.add("active");
+            } else {
+                pill.classList.remove("active");
+            }
+        });
+
+        const yearSelect = document.getElementById("yearSelect");
+        if (yearSelect) yearSelect.value = year;
+    }
+
+    function navigateYear(delta) {
+        const newYear = currentYear + delta;
+        if (newYear >= 2000 && newYear <= 2026) {
+            selectYear(newYear);
+        }
+    }
+
+    function onYearDropdownChange() {
+        const yearSelect = document.getElementById("yearSelect");
+        if (yearSelect) {
+            const year = parseInt(yearSelect.value);
+            selectYear(year);
+        }
+    }
+
+    function selectYear(year) {
+        if (year < 2000 || year > 2026) return;
+        currentYear = year;
+        updateNavButtonStates(year);
+
+        const overlay = document.getElementById("chartLoadingOverlay");
+        if (overlay) overlay.classList.add("active");
+
+        fetch("/api/historical-monthly?currency=" + encodeURIComponent(currentCurrency) + "&year=" + year)
+            .then(response => response.json())
+            .then(data => {
+                if (overlay) overlay.classList.remove("active");
+                if (data.success) {
+                    createOrUpdateMonthlyChart(
+                        data.labels,
+                        data.rates,
+                        data.counts,
+                        data.currency,
+                        data.year
+                    );
+
+                    const titleEl = document.getElementById("historicalGraphTitle");
+                    if (titleEl) {
+                        titleEl.innerHTML = "<span>🏛️</span><span>" + data.title + "</span>";
+                    }
+
+                    renderSummaryBox(data.summary, data.has_data, year);
+
+                    const newUrl = new URL(window.location.href);
+                    newUrl.searchParams.set("year", year);
+                    window.history.pushState({ year: year }, "", newUrl);
+                } else {
+                    alert("Could not load historical data: " + (data.error || "Unknown error"));
+                }
+            })
+            .catch(err => {
+                if (overlay) overlay.classList.remove("active");
+                console.error("Error fetching historical monthly data:", err);
+            });
+    }
+
+    function renderSummaryBox(summary, hasData, year) {
+        const container = document.getElementById("summaryContainer");
+        if (!container) return;
+
+        if (!hasData || !summary) {
+            container.innerHTML = `
+                <div class="empty-state" style="margin-bottom: var(--sp-4);">
+                    <p>⚠️ No historical monthly average records available for ${year}.</p>
+                    <p style="font-size: 0.8125rem; color: var(--text-muted);">Historical data for this period may be unavailable or unrecorded.</p>
+                </div>
+            `;
+            return;
+        }
+
+        const isComplete = summary.is_complete_year;
+        const coverageBadge = isComplete ?
+            "🟢 Complete 12 Months" :
+            `🟡 Partial Year (${12 - summary.available_months} missing)`;
+
+        container.innerHTML = `
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <div class="label">Currency Pair</div>
+                    <div class="value">${summary.currency_pair}</div>
+                    <div class="subtext">Year: <strong>${summary.year}</strong></div>
+                </div>
+
+                <div class="summary-card high">
+                    <div class="label">Highest Monthly Average</div>
+                    <div class="value">${summary.highest_average.toFixed(2)} INR</div>
+                    <div class="subtext">Peak Month: <strong>${summary.highest_month}</strong></div>
+                </div>
+
+                <div class="summary-card low">
+                    <div class="label">Lowest Monthly Average</div>
+                    <div class="value">${summary.lowest_average.toFixed(2)} INR</div>
+                    <div class="subtext">Trough Month: <strong>${summary.lowest_month}</strong></div>
+                </div>
+
+                <div class="summary-card avg">
+                    <div class="label">Yearly Average of Averages</div>
+                    <div class="value">${summary.average_of_averages.toFixed(2)} INR</div>
+                    <div class="subtext">Across available months</div>
+                </div>
+
+                <div class="summary-card coverage">
+                    <div class="label">Data Coverage</div>
+                    <div class="value">${summary.available_months} / ${summary.total_months} Months</div>
+                    <div class="subtext">${coverageBadge}</div>
+                </div>
+
+                <div class="summary-card">
+                    <div class="label">Start vs End Average</div>
+                    <div class="value">${summary.first_average.toFixed(2)} → ${summary.last_average.toFixed(2)}</div>
+                    <div class="subtext">${summary.first_month} to ${summary.last_month}</div>
+                </div>
+            </div>
+        `;
+    }
+
+    // ==========================================
+    // 4. QUICK RANGE AND CURRENCY NAVIGATION
+    // ==========================================
+    function changeCurrency() {
+        const currency = document.getElementById("currency").value;
+        const startDate = document.getElementById("start_date") ? document.getElementById("start_date").value : "";
+        const endDate = document.getElementById("end_date") ? document.getElementById("end_date").value : "";
+
+        let url = "/history?currency=" + encodeURIComponent(currency);
+        if (startDate) url += "&start_date=" + encodeURIComponent(startDate);
+        if (endDate) url += "&end_date=" + encodeURIComponent(endDate);
+        if (currentYear) url += "&year=" + encodeURIComponent(currentYear);
+        window.location.href = url;
+    }
+
+    function applyQuickRange(range) {
+        const currency = document.getElementById("currency").value;
+        fetch("/api/dynamic-daily?currency=" + encodeURIComponent(currency) + "&range=" + range)
+            .then(r => r.json())
+            .then(data => {
+                if (data.success && dynamicChart) {
+                    dynamicChart.data.labels = data.dates;
+                    dynamicChart.data.datasets[0].data = data.rates;
+                    dynamicChart.update();
+
+                    if (document.getElementById("start_date")) {
+                        document.getElementById("start_date").value = data.start_date || "";
+                    }
+                    if (document.getElementById("end_date")) {
+                        document.getElementById("end_date").value = data.end_date || "";
+                    }
+                }
+            })
+            .catch(err => console.error("Error applying quick range:", err));
+    }
+
+    updateNavButtonStates(currentYear);
+</script>
+{% endblock %}

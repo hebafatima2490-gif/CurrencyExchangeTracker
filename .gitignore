@@ -1,0 +1,14 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+.env
+instance/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Backup files
+backup_original/

@@ -1,0 +1,196 @@
+{% extends "tool_base.html" %}
+{% block title %}Forex Decision Assistant – Currency Exchange Tracker{% endblock %}
+
+{% block header_text %}
+<h1>Forex Decision Assistant</h1>
+<p class="subtitle">Got a quote from a bank or money changer? Enter it here to see what you would
+    really receive or pay once fees are included, compared with a reference rate.</p>
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+    <h2>Check an exchange offer</h2>
+    <p class="hint">Rates are in INR per 1 unit of the foreign currency, for example 94.50 for USD.</p>
+
+    {% if errors %}
+    <div class="errors" role="alert">
+        <strong>Please fix the following:</strong>
+        <ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+
+    <form method="post" action="{{ url_for('decision_assistant') }}" novalidate>
+        <fieldset>
+            <legend>What are you doing?</legend>
+            <div class="choice-row">
+                <label class="choice"><input type="radio" name="direction" value="buy"
+                        {% if values.direction == 'buy' %}checked{% endif %}> Buying foreign currency with INR</label>
+                <label class="choice"><input type="radio" name="direction" value="sell"
+                        {% if values.direction == 'sell' %}checked{% endif %}> Selling foreign currency for INR</label>
+            </div>
+        </fieldset>
+
+        <div class="form-grid-3" style="margin-top:16px;">
+            <div class="form-group">
+                <label for="currency">Currency</label>
+                <select id="currency" name="currency">
+                    {% for code, name in currencies.items() %}
+                    <option value="{{ code }}" {% if values.currency == code %}selected{% endif %}>{{ code }} - {{ name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="amount"><span id="amount-label">{{ 'Amount in INR you will exchange' if values.direction == 'buy' else 'Amount in foreign currency you will sell' }}</span></label>
+                <input type="number" id="amount" name="amount" step="any" min="0" inputmode="decimal"
+                       value="{{ values.amount }}" placeholder="{{ '50000' if values.direction == 'buy' else '500' }}" required>
+            </div>
+            <div class="form-group">
+                <label for="offer_rate">Offered rate (INR)</label>
+                <input type="number" id="offer_rate" name="offer_rate" step="any" min="0" inputmode="decimal"
+                       value="{{ values.offer_rate }}" placeholder="e.g. 96.10" required>
+            </div>
+        </div>
+
+        <div class="form-grid-4" style="margin-top:16px;">
+            <div class="form-group">
+                <label for="quote_unit">Rate is quoted per</label>
+                <select id="quote_unit" name="quote_unit">
+                    <option value="1" {% if values.quote_unit == '1' %}selected{% endif %}>1 unit</option>
+                    <option value="100" {% if values.quote_unit == '100' %}selected{% endif %}>100 units</option>
+                </select>
+                <span class="field-note">Yen is often quoted per 100.</span>
+            </div>
+            <div class="form-group">
+                <label for="flat_fee">Flat fee (INR)</label>
+                <input type="number" id="flat_fee" name="flat_fee" step="any" min="0" inputmode="decimal"
+                       value="{{ values.flat_fee }}" placeholder="0">
+                <span class="field-note">Service or handling fee.</span>
+            </div>
+            <div class="form-group">
+                <label for="percent_fee">Commission (%)</label>
+                <input type="number" id="percent_fee" name="percent_fee" step="any" min="0" inputmode="decimal"
+                       value="{{ values.percent_fee }}" placeholder="0">
+                <span class="field-note">Charged on the amount.</span>
+            </div>
+            <div class="form-group">
+                <label for="other_charges">Taxes and other charges (INR)</label>
+                <input type="number" id="other_charges" name="other_charges" step="any" min="0" inputmode="decimal"
+                       value="{{ values.other_charges }}" placeholder="0">
+                <span class="field-note">GST or anything else on the quote.</span>
+            </div>
+        </div>
+
+        <button type="submit" style="margin-top:20px;">Compare this offer</button>
+    </form>
+</div>
+
+{% if result %}
+<div class="card" id="result" aria-live="polite">
+    <h2>Result</h2>
+
+    <div class="verdict {{ result.verdict_level }}">
+        <h3>{{ result.verdict_title }}</h3>
+        <p>{{ result.verdict_text }}</p>
+    </div>
+
+    {% if not reference.is_live %}
+    <div class="notice">Live rates could not be loaded, so this uses the last rate saved in the app
+        ({{ reference.as_of }}). The result may be out of date.</div>
+    {% endif %}
+
+    {% set cur = result.currency %}
+    <div class="stat-grid-4">
+        {% if result.direction == 'buy' %}
+        <div class="stat"><div class="label">You pay in total</div>
+            <div class="value">₹{{ result.total_paid_inr|inr }}</div>
+            <div class="sub">₹{{ result.amount|inr }} + ₹{{ result.total_fees|inr }} fees</div></div>
+        <div class="stat"><div class="label">You receive</div>
+            <div class="value">{{ result.received_value|foreign(cur) }} {{ cur }}</div>
+            <div class="sub">at the offered rate</div></div>
+        {% else %}
+        <div class="stat"><div class="label">You hand over</div>
+            <div class="value">{{ result.amount|foreign(cur) }} {{ cur }}</div>
+            <div class="sub">worth ₹{{ result.gross_inr|inr }} at the offered rate</div></div>
+        <div class="stat"><div class="label">You receive after fees</div>
+            <div class="value">₹{{ result.received_value|inr }}</div>
+            <div class="sub">after ₹{{ result.total_fees|inr }} of fees</div></div>
+        {% endif %}
+        <div class="stat"><div class="label">Effective rate after fees</div>
+            <div class="value">₹{{ '%.4f'|format(result.effective_rate) }}</div>
+            <div class="sub">per 1 {{ cur }}</div></div>
+        <div class="stat"><div class="label">Difference from reference</div>
+            <div class="value {{ 'neg' if result.extra_cost_inr > 0 else 'pos' }}">
+                {{ '-' if result.extra_cost_inr > 0 else '+' }}₹{{ (result.extra_cost_inr|abs)|inr }}</div>
+            <div class="sub">{{ result.markup_pct|abs|round(2) }}% {{ 'worse' if result.extra_cost_inr > 0 else 'better' }} than the reference rate</div></div>
+    </div>
+
+    <h3>Breakdown</h3>
+    <div class="table-wrap">
+    <table>
+        <tbody>
+            <tr><th scope="row">Reference rate ({{ reference.source }})</th>
+                <td class="num">₹{{ '%.4f'|format(result.reference_rate) }}</td></tr>
+            <tr><th scope="row">Offered rate</th>
+                <td class="num">₹{{ '%.4f'|format(result.offer_rate) }}
+                    <span class="muted">({{ result.offer_vs_reference_pct|signed_pct }} vs reference)</span></td></tr>
+            <tr><th scope="row">Flat fee</th><td class="num">₹{{ result.flat_fee|inr }}</td></tr>
+            <tr><th scope="row">Commission ({{ result.percent_fee|round(2) }}%)</th><td class="num">₹{{ result.percent_fee_inr|inr }}</td></tr>
+            <tr><th scope="row">Taxes and other charges</th><td class="num">₹{{ result.other_charges|inr }}</td></tr>
+            <tr><th scope="row">Total fees</th><td class="num"><strong>₹{{ result.total_fees|inr }}</strong></td></tr>
+            <tr><th scope="row">Cost of the quoted rate itself</th><td class="num">₹{{ result.rate_margin_inr|inr }}</td></tr>
+            <tr><th scope="row">Total difference from the reference rate</th>
+                <td class="num"><strong>₹{{ result.extra_cost_inr|inr }}</strong></td></tr>
+            {% if result.direction == 'buy' %}
+            <tr><th scope="row">At the reference rate, ₹{{ result.total_paid_inr|inr }} would give</th>
+                <td class="num">{{ result.ideal_foreign|foreign(cur) }} {{ cur }}
+                    <span class="muted">({{ result.shortfall_foreign|foreign(cur) }} {{ cur }} more than this offer)</span></td></tr>
+            {% else %}
+            <tr><th scope="row">At the reference rate, {{ result.amount|foreign(cur) }} {{ cur }} would give</th>
+                <td class="num">₹{{ result.ideal_inr|inr }}
+                    <span class="muted">(₹{{ result.shortfall_inr|inr }} more than this offer)</span></td></tr>
+            {% endif %}
+        </tbody>
+    </table>
+    </div>
+
+    <p class="muted" style="margin-top:14px; font-size: 0.8125rem;">
+        The reference rate is a mid-market rate from a data provider ({{ reference.as_of }}). It is used
+        for comparison only. No provider is obliged to offer it, and it is not the official FBIL reference rate.
+        This is an estimate to help you decide, not financial advice.</p>
+</div>
+{% endif %}
+
+<div class="card">
+    <h2>Before you accept an offer, check</h2>
+    <p class="hint">Tick items off as you go. Nothing here is saved.</p>
+    <ul class="checklist">
+        {% for title, detail in checklist %}
+        <li>
+            <input type="checkbox" id="chk{{ loop.index }}">
+            <label for="chk{{ loop.index }}" style="margin:0;font-weight:normal; cursor:pointer;">
+                <strong>{{ title }}</strong>
+                <span>{{ detail }}</span>
+            </label>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+
+{% include "_official_resources.html" %}
+
+<script>
+    // Keep the amount label in step with the buy/sell choice.
+    (function () {
+        var label = document.getElementById("amount-label");
+        var amount = document.getElementById("amount");
+        document.querySelectorAll('input[name="direction"]').forEach(function (r) {
+            r.addEventListener("change", function () {
+                var buying = this.value === "buy";
+                label.textContent = buying ? "Amount in INR you will exchange" : "Amount in foreign currency you will sell";
+                amount.placeholder = buying ? "50000" : "500";
+            });
+        });
+    })();
+</script>
+{% endblock %}

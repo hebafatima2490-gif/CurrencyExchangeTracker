@@ -1,0 +1,185 @@
+{% extends "tool_base.html" %}
+{% block title %}Travel Money Planner – Currency Exchange Tracker{% endblock %}
+
+{% block header_text %}
+<h1>Travel Money Planner</h1>
+<p class="subtitle">Plan how much foreign currency a trip may need, and see how a change in the
+    exchange rate could affect your budget. These are planning estimates, not exact cash requirements.</p>
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+    <h2>Plan your trip budget</h2>
+    <p class="hint">Enter amounts in Indian rupees. Rates are looked up for you.</p>
+
+    {% if errors %}
+    <div class="errors" role="alert">
+        <strong>Please fix the following:</strong>
+        <ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+
+    <form method="post" action="{{ url_for('travel_planner') }}" novalidate>
+        <div class="form-grid-3">
+            <div class="form-group">
+                <label for="destination">Destination</label>
+                <select id="destination" name="destination">
+                    {% for code, label, cur in destinations %}
+                    <option value="{{ code }}" {% if values.destination == code %}selected{% endif %}>{{ label }} – {{ cur }}</option>
+                    {% endfor %}
+                </select>
+                <span class="field-note">Limited to the currencies this tracker supports.</span>
+            </div>
+            <div class="form-group">
+                <label for="days">Trip length (days)</label>
+                <input type="number" id="days" name="days" min="1" max="365" step="1" inputmode="numeric"
+                       value="{{ values.days }}" placeholder="e.g. 7" required>
+            </div>
+            <div class="form-group">
+                <label for="travel_date">Travel date <span class="muted">(optional)</span></label>
+                <input type="date" id="travel_date" name="travel_date" min="{{ today }}" value="{{ values.travel_date }}">
+            </div>
+        </div>
+
+        <fieldset style="margin-top:20px;">
+            <legend>How do you want to plan?</legend>
+            <div class="choice-row">
+                <label class="choice"><input type="radio" name="plan_by" value="daily"
+                        {% if values.plan_by == 'daily' %}checked{% endif %}> From my daily spending</label>
+                <label class="choice"><input type="radio" name="plan_by" value="total"
+                        {% if values.plan_by == 'total' %}checked{% endif %}> From my total budget</label>
+            </div>
+        </fieldset>
+
+        <div class="form-grid-2" style="margin-top:16px;">
+            <div id="group-daily" class="form-group {{ '' if values.plan_by == 'daily' else 'hidden' }}">
+                <label for="daily_spend">Estimated spending per day (INR)</label>
+                <input type="number" id="daily_spend" name="daily_spend" min="0" step="any" inputmode="decimal"
+                       value="{{ values.daily_spend }}" placeholder="e.g. 5000">
+                <span class="field-note">Food, local transport, activities and shopping.</span>
+            </div>
+            <div id="group-total" class="form-group {{ '' if values.plan_by == 'total' else 'hidden' }}">
+                <label for="total_budget">Total travel budget (INR)</label>
+                <input type="number" id="total_budget" name="total_budget" min="0" step="any" inputmode="decimal"
+                       value="{{ values.total_budget }}" placeholder="e.g. 50000">
+                <span class="field-note">The money you plan to spend abroad, not including flights.</span>
+            </div>
+            <div class="form-group">
+                <label for="buffer_pct">Safety buffer (%)</label>
+                <input type="number" id="buffer_pct" name="buffer_pct" min="0" max="100" step="any" inputmode="decimal"
+                       value="{{ values.buffer_pct }}">
+                <span class="field-note">Extra on top of your estimate for surprises. 10% is a common starting point.</span>
+            </div>
+        </div>
+
+        <button type="submit" style="margin-top:20px;">Estimate my budget</button>
+    </form>
+</div>
+
+{% if plan %}
+{% set cur = plan.currency %}
+<div class="card" id="result" aria-live="polite">
+    <h2>Your estimate for {{ context.destination_label }}</h2>
+
+    {% if not context.reference.is_live %}
+    <div class="notice">Live rates could not be loaded, so this uses the last rate saved in the app
+        ({{ context.reference.as_of }}). The estimate may be out of date.</div>
+    {% endif %}
+
+    <div class="stat-grid-4">
+        <div class="stat"><div class="label">Your spending estimate</div>
+            <div class="value">₹{{ plan.base_inr|inr(0) }}</div>
+            <div class="sub">about {{ plan.base_foreign|foreign(cur) }} {{ cur }}</div></div>
+        <div class="stat"><div class="label">Suggested exchange budget</div>
+            <div class="value">₹{{ plan.suggested_inr|inr(0) }}</div>
+            <div class="sub">about {{ plan.suggested_foreign|foreign(cur) }} {{ cur }}, with {{ plan.buffer_pct|round(1)|string|replace('.0','') }}% buffer</div></div>
+        <div class="stat"><div class="label">Per day</div>
+            <div class="value">{{ plan.daily_foreign|foreign(cur) }} {{ cur }}</div>
+            <div class="sub">₹{{ plan.daily_inr|inr(0) }} for {{ plan.days }} day{{ '' if plan.days == 1 else 's' }}</div></div>
+        <div class="stat"><div class="label">Rate used</div>
+            <div class="value">₹{{ '%.4f'|format(plan.rate) }}</div>
+            <div class="sub">per 1 {{ cur }}, {{ context.reference.as_of }}</div></div>
+    </div>
+
+    <h3>What if the exchange rate changes?</h3>
+    <p class="hint">Based on the suggested exchange budget of ₹{{ plan.suggested_inr|inr(0) }}. When the rupee
+        weakens, each {{ cur }} costs more rupees, so the same rupees buy less.</p>
+    <div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th scope="col">Scenario</th>
+                <th scope="col" class="num">Rate (INR per {{ cur }})</th>
+                <th scope="col" class="num">{{ cur }} you would receive</th>
+                <th scope="col" class="num">Change</th>
+                <th scope="col" class="num">INR needed for {{ plan.suggested_foreign|foreign(cur) }} {{ cur }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in plan.scenarios %}
+            <tr class="{{ 'today' if s.pct == 0 else '' }}">
+                <th scope="row" style="background:none;font-weight:inherit;">{{ s.label }}</th>
+                <td class="num">{{ '%.4f'|format(s.rate) }}</td>
+                <td class="num">{{ s.received_foreign|foreign(cur) }}</td>
+                <td class="num {{ 'neg' if s.foreign_change < -0.005 else ('pos' if s.foreign_change > 0.005 else '') }}">
+                    {% if s.pct == 0 %}-{% else %}{{ '%+.2f'|format(s.foreign_change) if cur != 'JPY' else '%+.0f'|format(s.foreign_change) }}{% endif %}</td>
+                <td class="num">₹{{ s.inr_needed|inr(0) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+
+    <div class="verdict check" style="margin-top:20px;">
+        <h3>Suggested way to plan</h3>
+        <p>Set aside about <strong>₹{{ plan.suggested_inr|inr(0) }}</strong> for this trip. If the rupee weakened by 5%,
+            getting the same {{ plan.suggested_foreign|foreign(cur) }} {{ cur }} would cost about
+            <strong>₹{{ plan.cushion_inr|inr(0) }}</strong> (₹{{ plan.cushion_extra_inr|inr(0) }} more), so it helps to know
+            where that extra money could come from.</p>
+    </div>
+
+    <h3>Market context</h3>
+    <div class="stat-grid-3">
+        <div class="stat"><div class="label">30-day average</div>
+            <div class="value">{% if context.average %}₹{{ '%.2f'|format(context.average) }}{% else %}N/A{% endif %}</div>
+            <div class="sub">per 1 {{ cur }}, from saved daily rates</div></div>
+        <div class="stat"><div class="label">Recent volatility</div>
+            <div class="value" style="font-size:18px;">{{ context.volatility_label }}</div>
+            <div class="sub">based on the last 30 saved rates</div></div>
+        <div class="stat"><div class="label">Travel date</div>
+            <div class="value" style="font-size:18px;">
+                {% if context.travel_date %}{{ context.travel_date.strftime('%d %b %Y') }}{% else %}Not set{% endif %}</div>
+            <div class="sub">{% if context.days_until_travel is not none %}{{ context.days_until_travel }} day{{ '' if context.days_until_travel == 1 else 's' }} from today. The rate may move before then.{% else %}Add a date to see how far away it is.{% endif %}</div></div>
+    </div>
+
+    <p class="muted" style="margin-top:14px; font-size: 0.8125rem;">
+        This is a planning estimate, not the exact cash you need. It uses a mid-market rate
+        ({{ context.reference.source }}) and does not include provider fees, margins or taxes. Real offers will be
+        less favourable than this rate. Check a real quote below.</p>
+
+    <div style="margin-top: 18px;">
+        <a class="button secondary"
+           href="{{ url_for('decision_assistant', direction='buy', currency=cur, amount=plan.suggested_inr|round|int) }}">
+            Got a quote? Check it with the Decision Assistant</a>
+    </div>
+</div>
+{% endif %}
+
+{% include "_official_resources.html" %}
+
+<script>
+    // Show only the field that matches the chosen planning method.
+    (function () {
+        var daily = document.getElementById("group-daily");
+        var total = document.getElementById("group-total");
+        document.querySelectorAll('input[name="plan_by"]').forEach(function (r) {
+            r.addEventListener("change", function () {
+                var byDaily = this.value === "daily";
+                daily.classList.toggle("hidden", !byDaily);
+                total.classList.toggle("hidden", byDaily);
+            });
+        });
+    })();
+</script>
+{% endblock %}

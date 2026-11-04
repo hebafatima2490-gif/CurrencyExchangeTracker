@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Conversion Result – International Currency Exchange Rate Tracker{% endblock %}
+
+{% block hero %}
+<div class="page-header">
+    <div class="container text-center">
+        <h1>Currency Conversion Result</h1>
+        <p class="subtitle" style="margin: 0 auto;">
+            Verified mid-market rate calculation and currency trend valuation.
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="receipt-wrapper">
+    <article class="receipt-card">
+        <div class="receipt-header">
+            <div class="receipt-icon" aria-hidden="true">💱</div>
+            <h2 style="font-family: var(--font-display); font-size: 1.5rem; margin-bottom: 4px; color: var(--ink-forest);">
+                Exchange Voucher & Summary
+            </h2>
+            <div class="muted" style="font-size: 0.8125rem;">
+                International Currency Exchange Rate Tracker
+            </div>
+        </div>
+
+        <div class="conversion-display-box conversion">
+            <div class="conversion-unit amount-box">
+                <div class="conversion-val amount">{{ amount }}</div>
+                <div class="conversion-cur currency">{{ from_currency }}</div>
+            </div>
+
+            <div class="conversion-arrow arrow" aria-hidden="true">&rarr;</div>
+
+            <div class="conversion-unit amount-box">
+                <div class="conversion-val amount">{{ "%.2f"|format(converted_amount) }}</div>
+                <div class="conversion-cur currency">{{ to_currency }}</div>
+            </div>
+        </div>
+
+        <!-- Exchange Rate Box -->
+        <div class="stat rate-box" style="margin-bottom: var(--sp-5); text-align: center;">
+            <div class="label"><strong>Exchange Rate</strong></div>
+            <div class="value" style="font-size: 1.25rem; margin-top: 4px;">
+                1 {{ from_currency }} = {{ rate }} {{ to_currency }}
+            </div>
+        </div>
+
+        <!-- Rupee Movement Status -->
+        {% if rupee_status %}
+        <div class="card status" style="background: var(--paper-warm); border-left: 4px solid var(--mint-accent); margin-bottom: var(--sp-6);">
+            <strong style="font-size: 1rem; color: var(--ink-forest); display: block; margin-bottom: 6px;">
+                {{ rupee_status }}
+            </strong>
+
+            {% if previous_rate is not none %}
+            <div class="rate-change" style="color: var(--text-secondary); font-size: 0.875rem;">
+                INR rate changed from 
+                <strong>{{ "%.2f"|format(previous_rate) }} INR</strong> 
+                to 
+                <strong>{{ "%.2f"|format(comparison_rate) }} INR</strong>
+            </div>
+
+            <div class="percentage" style="margin-top: 6px; font-weight: 700; color: var(--mint-accent); font-family: var(--font-mono);">
+                {{ "%.2f"|format(percentage_change) }}% change
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <div style="display: flex; gap: var(--sp-3); justify-content: center; flex-wrap: wrap;">
+            <a href="/converter" class="button">
+                Convert Another Amount
+            </a>
+            <a href="/" class="button secondary back-button">
+                &larr; Back to Dashboard
+            </a>
+        </div>
+    </article>
+</div>
+{% endblock %}

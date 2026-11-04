@@ -1,0 +1,39 @@
+{% extends "tool_base.html" %}
+{% block title %}Log in – Currency Exchange Tracker{% endblock %}
+{% block header_text %}
+<h1>Account Sign In</h1>
+<p class="subtitle">Log in to your Currency Exchange Tracker account to manage alerts and preferences.</p>
+{% endblock %}
+{% block content %}
+<div class="card" style="max-width:440px; margin:0 auto; padding: var(--sp-8);">
+    <h2>Sign in</h2>
+    <p class="hint">Enter your credentials below to access your account.</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="{{ 'errors' if category == 'error' else 'notice' }}" role="status">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="post" action="{{ url_for('login') }}">
+        <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" autocomplete="username" required>
+        </div>
+
+        <div class="form-group" style="margin-top:16px;">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" autocomplete="current-password" required>
+        </div>
+
+        <button type="submit" style="width:100%; margin-top:24px;">Log in</button>
+    </form>
+
+    <div style="margin-top:20px; text-align:center; padding-top:16px; border-top:1px solid var(--engraved-subtle); font-size:0.875rem;">
+        <span class="muted">No account yet?</span> 
+        <a href="{{ url_for('register') }}" style="color:var(--mint-accent); font-weight:600; text-decoration:none;">Create an account</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Currency Converter – International Currency Exchange Rate Tracker{% endblock %}
+
+{% block hero %}
+<div class="page-header">
+    <div class="container">
+        <h1>Currency Converter Desk</h1>
+        <p class="subtitle">
+            Convert amounts seamlessly between major global currencies and the Indian Rupee (INR) 
+            using verified real-time and cached benchmark exchange rates.
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 860px; margin: 0 auto;">
+    <div class="card" id="converter">
+        <h2>Exchange Rate Calculator</h2>
+        <p class="hint">
+            Select your source and target currency, specify the quantity, and get an immediate conversion quote 
+            with historical rupee movement analysis.
+        </p>
+
+        <form action="/convert" method="post">
+            <div class="form-grid-3">
+                <div class="form-group">
+                    <label for="from_currency">From Currency</label>
+                    <select id="from_currency" name="from_currency" required>
+                        <option value="USD" selected>USD - US Dollar</option>
+                        <option value="EUR">EUR - Euro</option>
+                        <option value="GBP">GBP - British Pound</option>
+                        <option value="JPY">JPY - Japanese Yen</option>
+                        <option value="AED">AED - UAE Dirham</option>
+                        <option value="INR">INR - Indian Rupee</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="to_currency">To Currency</label>
+                    <select id="to_currency" name="to_currency" required>
+                        <option value="INR" selected>INR - Indian Rupee</option>
+                        <option value="USD">USD - US Dollar</option>
+                        <option value="EUR">EUR - Euro</option>
+                        <option value="GBP">GBP - British Pound</option>
+                        <option value="JPY">JPY - Japanese Yen</option>
+                        <option value="AED">AED - UAE Dirham</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="amount">Amount to Convert</label>
+                    <input type="number" id="amount" name="amount" step="any" min="0.01" value="100" required>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: var(--sp-3); align-items: center; margin-top: var(--sp-6); flex-wrap: wrap;">
+                <button type="submit">Convert Currency</button>
+                <button type="button" id="swapCurrenciesBtn" class="button secondary" style="margin-top:0;">
+                    ⇄ Swap Currencies
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Supplementary Informational Card -->
+    <div class="card" style="margin-top: var(--sp-6);">
+        <h3>About These Conversions</h3>
+        <p style="color: var(--text-secondary); line-height: 1.5; margin-bottom: var(--sp-4);">
+            Conversions on this portal are executed using standard interbank mid-market exchange rates. 
+            Retail transactions, bank wire transfers, and travel money cards usually incorporate a dealer markup 
+            or foreign transaction fee (1% to 4%) on top of these benchmark rates.
+        </p>
+        <div style="display: flex; gap: var(--sp-4); flex-wrap: wrap;">
+            <a href="/decision-assistant" class="hub-card-link">Have an actual bank quote? Check it with Decision Assistant &rarr;</a>
+            <a href="/history" class="hub-card-link">View exchange rate historical trends &rarr;</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const swapBtn = document.getElementById("swapCurrenciesBtn");
+        const fromSelect = document.getElementById("from_currency");
+        const toSelect = document.getElementById("to_currency");
+
+        if (swapBtn && fromSelect && toSelect) {
+            swapBtn.addEventListener("click", function () {
+                const temp = fromSelect.value;
+                fromSelect.value = toSelect.value;
+                toSelect.value = temp;
+            });
+        }
+    });
+</script>
+{% endblock %}
+

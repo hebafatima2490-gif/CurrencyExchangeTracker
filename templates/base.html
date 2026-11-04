@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}International Currency Exchange Rate Tracker{% endblock %}</title>
+
+    <!-- Sovereign Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    {% block head %}{% endblock %}
+</head>
+
+<body>
+    <!-- Accessibility Skip Link -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <!-- Global Application Header -->
+    <header class="site-header">
+        <div class="container header-inner">
+            <a href="/" class="brand-group" aria-label="International Currency Exchange Rate Tracker Home">
+                <div class="brand-seal" aria-hidden="true">💱</div>
+                <div class="brand-text">
+                    <h1>International Currency Exchange Rate Tracker</h1>
+                    <div class="brand-tagline">Bureau de Change & Analytics Ledger</div>
+                </div>
+            </a>
+
+            <button class="menu-toggle" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="primaryNav">
+                ☰
+            </button>
+
+            <nav id="primaryNav" class="nav-menu" aria-label="Main Navigation">
+                <a href="/" class="nav-link {% if request.path == '/' %}active{% endif %}">Dashboard</a>
+                <a href="/converter" class="nav-link {% if request.path == '/converter' or active == 'converter' %}active{% endif %}">Converter</a>
+                <a href="/history" class="nav-link {% if request.path.startswith('/history') or active == 'history' %}active{% endif %}">History</a>
+                <a href="{{ url_for('decision_assistant') }}" class="nav-link {% if request.path == '/decision-assistant' or active == 'decision' %}active{% endif %}">Decision Assistant</a>
+                <a href="{{ url_for('travel_planner') }}" class="nav-link {% if request.path == '/travel-planner' or active == 'travel' %}active{% endif %}">Travel Planner</a>
+                <a href="/about" class="nav-link {% if request.path == '/about' or active == 'about' %}active{% endif %}">About</a>
+
+                <span class="nav-divider" aria-hidden="true"></span>
+
+                {% if session.get('username') %}
+                    <span class="nav-user-badge" title="Logged in user">👤 {{ session['username'] }}</span>
+                    <a href="{{ url_for('logout') }}" class="nav-link">Log out</a>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="nav-link {% if request.path == '/login' or active == 'login' %}active{% endif %}">Log in</a>
+                {% endif %}
+            </nav>
+        </div>
+    </header>
+
+    {% block hero %}{% endblock %}
+
+    <!-- Main Content Area -->
+    <main id="main-content" class="page-container">
+        <div class="container">
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="{{ 'errors' if category == 'error' else 'notice' }}" role="status">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <!-- Global Application Footer -->
+    <footer class="site-footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <h4>International Currency Exchange Rate Tracker</h4>
+                    <p style="margin-top: 8px;">
+                        A specialized financial planning portal delivering verified exchange rate tracking, 
+                        30-day volatility monitoring, and currency conversion against the Indian Rupee (INR).
+                    </p>
+                    <p class="muted" style="margin-top: 12px; font-size: 0.8125rem;">
+                        Reference rates sourced from mid-market data observations (Frankfurter API). 
+                        Planning estimates only, not financial advice.
+                    </p>
+                </div>
+
+                <div class="footer-col">
+                    <h4>Direct Navigation</h4>
+                    <ul>
+                        <li><a href="/">Rates Dashboard</a></li>
+                        <li><a href="/converter">Currency Converter</a></li>
+                        <li><a href="/history">Historical Analytics</a></li>
+                        <li><a href="/decision-assistant">Forex Decision Assistant</a></li>
+                        <li><a href="/travel-planner">Travel Money Planner</a></li>
+                        <li><a href="/about">About This Project</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-col">
+                    <h4>Important Notice</h4>
+                    <p>
+                        This portal is an independent analytical tool and not an authorised foreign exchange dealer. 
+                        Always verify final quotes and fees with RBI-regulated providers before transacting.
+                    </p>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <div>&copy; 2026 International Currency Exchange Rate Tracker. All rights reserved.</div>
+                <div>Designed with Sovereign Banknote Standards & Accessible Web Architecture.</div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Main Scripts -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>
+
