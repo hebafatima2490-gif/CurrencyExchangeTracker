@@ -2,7 +2,55 @@
 
 {% block title %}Dashboard – International Currency Exchange Rate Tracker{% endblock %}
 
+{% block head %}
+<!-- Global Wealth Scene 1 Stylesheet -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/scene1.css') }}">
+{% endblock %}
+
 {% block hero %}
+<!-- Scene 1: GLOBAL WEALTH Cinematic Scroll Animation Section -->
+<section id="globalWealthScene1" class="scene1-pin-container" aria-label="Global Wealth Scene 1 Cinematic Experience">
+    <!-- Top Progress Bar -->
+    <div class="scene1-progress-bar-wrap" aria-hidden="true">
+        <div class="scene1-progress-bar"></div>
+    </div>
+
+    <!-- Direct Skip Navigation Button -->
+    <a href="#bureauBoardHero" class="scene1-skip-btn" aria-label="Skip cinematic animation to exchange board">
+        <span>Skip to Exchange Board</span>
+        <span aria-hidden="true">&darr;</span>
+    </a>
+
+    <div class="scene1-canvas-wrap">
+        <!-- High-Performance HTML5 Canvas -->
+        <canvas id="scene1Canvas" width="1920" height="1080" aria-label="Cinematic sequence of Scene 1"></canvas>
+        <div class="scene1-vignette" aria-hidden="true"></div>
+    </div>
+
+    <!-- Independent Headline & Typography Overlay (Requirement 8) -->
+    <div class="scene1-overlay">
+        <div class="scene1-badge">
+            <span class="scene1-badge-pulse" aria-hidden="true"></span>
+            <span>Global Wealth &bull; Scene 01</span>
+        </div>
+        <h1 class="scene1-headline">Tracking Capital Across Global Borders</h1>
+        <p class="scene1-subhead">
+            A cinematic ledger observing sovereign reserves, foreign currency exchange dynamics, and global liquidity.
+        </p>
+        <div class="scene1-scroll-cue" aria-hidden="true">
+            <span class="scene1-mouse">
+                <span class="scene1-mouse-wheel"></span>
+            </span>
+            <span>Scroll to explore sequence</span>
+        </div>
+    </div>
+
+    <!-- Non-blocking Asset Status Indicator -->
+    <div class="scene1-loader-hud" aria-live="polite">
+        Initializing Scene 1...
+    </div>
+</section>
+
 <!-- Split-Flap Departure Board Hero Intro Section -->
 <section id="bureauBoardHero" class="bureau-board-hero flap-animated" aria-label="Bureau de Change Live Departure Board">
     <div class="container">
@@ -430,4 +478,12 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<!-- GSAP Core & ScrollTrigger Plugin for Cinematic Animation -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<!-- Global Wealth Scene 1 Interactive Engine -->
+<script src="{{ url_for('static', filename='js/scene1.js') }}"></script>
 {% endblock %}
