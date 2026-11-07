@@ -58,47 +58,6 @@ def create_database():
 
     connection.commit()
     connection.close()
-    connection = sqlite3.connect(DATABASE_NAME)
-
-    cursor = connection.cursor()
-
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS exchange_rates (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            date TEXT NOT NULL,
-            base_currency TEXT NOT NULL,
-            target_currency TEXT NOT NULL,
-            rate REAL NOT NULL
-        )
-    """)
-
-    cursor.execute("""
-        CREATE UNIQUE INDEX IF NOT EXISTS idx_exchange_rates_date_currencies
-        ON exchange_rates (date, base_currency, target_currency)
-    """)
-
-    # Monthly Historical Averages Table for multi-year tracking (2000 - 2026)
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS monthly_exchange_rates (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            base_currency TEXT NOT NULL,
-            target_currency TEXT NOT NULL,
-            year INTEGER NOT NULL,
-            month INTEGER NOT NULL,
-            average_rate REAL NOT NULL,
-            observations_count INTEGER NOT NULL,
-            data_source TEXT NOT NULL DEFAULT 'Frankfurter API',
-            created_at TEXT
-        )
-    """)
-
-    cursor.execute("""
-        CREATE UNIQUE INDEX IF NOT EXISTS idx_monthly_rates_currency_year_month
-        ON monthly_exchange_rates (base_currency, target_currency, year, month)
-    """)
-
-    connection.commit()
-    connection.close()
 
 
 def save_rate(base_currency, target_currency, rate, date=None):
@@ -293,6 +252,15 @@ def get_latest_rate(base_currency, target_currency):
 
 
 def get_average_rate(base_currency, target_currency):
+    """
+    Calculates the 30-observation rolling average exchange rate from SQLite.
+
+    Methodology:
+        Unweighted arithmetic mean of the most recent 30 recorded trading observations
+        (exchange_rates table ordered by date DESC LIMIT 30). Because foreign exchange
+        markets are closed on weekends and financial holidays, 30 trading observations
+        typically span approximately 40 to 45 calendar days.
+    """
     connection = sqlite3.connect(DATABASE_NAME)
     cursor = connection.cursor()
 
@@ -316,6 +284,20 @@ def get_average_rate(base_currency, target_currency):
 
 
 def get_volatility(base_currency, target_currency):
+    """
+    Calculates currency volatility using Mean Absolute Percentage Deviation (MAPD)
+    over the most recent 30 recorded market observations.
+
+    Formula:
+        Average Rate (r̄) = (1 / N) * sum(rate_i)
+        Deviation_i      = |rate_i - r̄| / r̄ * 100%
+        Volatility (MAPD)= (1 / N) * sum(Deviation_i)
+
+    Interpretation:
+        < 1.0% : Low Volatility (stable currency conditions)
+        1.0% - 2.0% : Medium Volatility (moderate price fluctuation)
+        > 2.0% : High Volatility (elevated exchange rate movement)
+    """
     connection = sqlite3.connect(DATABASE_NAME)
     cursor = connection.cursor()
 

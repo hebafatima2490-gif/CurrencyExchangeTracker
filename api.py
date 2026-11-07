@@ -3,27 +3,45 @@ from datetime import datetime
 import requests
 
 
-def get_exchange_rate(base_currency, target_currency):
+# Cache for the most recently observed publication dates from Frankfurter API
+_LATEST_API_DATES = {}
 
+
+def get_latest_api_date(base_currency, target_currency):
+    """
+    Returns the actual observation/publication date (YYYY-MM-DD)
+    associated with the last successful rate retrieval for the given pair.
+    """
+    return _LATEST_API_DATES.get((base_currency, target_currency))
+
+
+def get_exchange_rate(base_currency, target_currency):
+    """
+    Fetches the latest mid-market exchange rate from Frankfurter API v2.
+    Preserves the actual observation date reported by the API to avoid
+    misrepresenting older weekend/holiday quotes as newly published rates.
+    """
     url = f"https://api.frankfurter.dev/v2/rate/{base_currency}/{target_currency}"
 
     try:
-
         response = requests.get(
             url,
             timeout=10
         )
 
         if response.status_code == 200:
-
             data = response.json()
+            rate = data.get("rate")
+            rate_date = data.get("date")
 
-            return data["rate"]
+            if rate is not None and rate_date:
+                _LATEST_API_DATES[(base_currency, target_currency)] = str(rate_date)
+
+            return rate
 
         return None
 
     except requests.exceptions.RequestException:
-
         return None
 
 

@@ -1,8 +1,16 @@
+import os
+import math
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import Flask, request, render_template, jsonify, session, redirect, url_for, flash
-from api import get_exchange_rate, get_historical_rates, fetch_and_cache_year_history
+from api import (
+    get_exchange_rate,
+    get_latest_api_date,
+    get_historical_rates,
+    fetch_and_cache_year_history
+)
 from database import (
+    DATABASE_NAME,
     create_database,
     save_rate,
     get_history,
@@ -21,13 +29,47 @@ from datetime import datetime, timedelta, date
 import forex_tools
 
 app = Flask(__name__)
-app.secret_key = "currency_tracker_local_dev_key_2026"
+
+# Configure Secret Key:
+# In production, require FLASK_SECRET_KEY and strictly forbid hardcoded defaults.
+# In local development, allow a dev-only fallback so the application runs seamlessly out-of-the-box.
+IS_PRODUCTION = (
+    os.environ.get("FLASK_ENV") == "production"
+    or os.environ.get("ENV") == "production"
+    or os.environ.get("ENVIRONMENT") == "production"
+)
+
+secret_key = os.environ.get("FLASK_SECRET_KEY") or os.environ.get("SECRET_KEY")
+
+if not secret_key:
+    if IS_PRODUCTION:
+        raise RuntimeError(
+            "CRITICAL SECURITY ERROR: The FLASK_SECRET_KEY environment variable is mandatory in production! "
+            "Set FLASK_SECRET_KEY to a secure random value before starting the server."
+        )
+    # Development-only fallback key
+    secret_key = "currency_tracker_local_dev_key_2026"
+
+app.secret_key = secret_key
 
 # Ensure tables and indexes are initialized
 create_database()
 
 ALLOWED_CURRENCIES = ["USD", "EUR", "GBP", "JPY", "AED"]
-ALLOWED_YEARS = list(range(2000, 2027))
+MIN_HISTORICAL_YEAR = 2000
+
+
+def get_max_historical_year():
+    """Returns the current calendar year dynamically."""
+    return datetime.now().year
+
+
+def get_allowed_years():
+    """Dynamic list of allowed historical years from 2000 up to the current year."""
+    return list(range(MIN_HISTORICAL_YEAR, get_max_historical_year() + 1))
+
+
+ALLOWED_YEARS = get_allowed_years()
 MONTH_NAMES = [
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"
@@ -248,7 +290,7 @@ def register():
             flash('Username and password are required.', 'error')
             return render_template('register.html')
         # Check duplicate username
-        conn = sqlite3.connect('currency_tracker.db')
+        conn = sqlite3.connect(DATABASE_NAME)
         cur = conn.cursor()
         cur.execute('SELECT id FROM users WHERE username = ?', (username,))
         if cur.fetchone():
@@ -270,7 +312,7 @@ def login():
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '').strip()
-        conn = sqlite3.connect('currency_tracker.db')
+        conn = sqlite3.connect(DATABASE_NAME)
         cur = conn.cursor()
         cur.execute('SELECT id, password_hash FROM users WHERE username = ?', (username,))
         row = cur.fetchone()
@@ -292,46 +334,53 @@ def logout():
 
 @app.route("/")
 def home():
-    usd_inr = get_exchange_rate("USD", "INR")
+    currencies = ["USD", "EUR", "GBP", "JPY", "AED"]
+    fetched_rates = {}
+
+    # 1. Fetch available rates safely without crashing on API errors
+    for c in currencies:
+        try:
+            fetched_rates[c] = get_exchange_rate(c, "INR")
+        except Exception as e:
+            print(f"Error fetching live rate for {c}: {e}")
+            fetched_rates[c] = None
+
+    # 2. Save valid non-None rates first (preserving actual API observation dates)
+    for c, r in fetched_rates.items():
+        if r is not None:
+            rate_date = get_latest_api_date(c, "INR")
+            save_rate(c, "INR", r, date=rate_date)
+
+    # 3. Calculate 30-observation averages, recommendations, and volatility
+    usd_inr = fetched_rates.get("USD")
     usd_average = get_average_rate("USD", "INR")
     usd_signal = get_buy_signal(usd_inr, usd_average)
     usd_volatility = get_volatility("USD", "INR")
     usd_volatility_label = get_volatility_label(usd_volatility)
 
-    eur_inr = get_exchange_rate("EUR", "INR")
+    eur_inr = fetched_rates.get("EUR")
     eur_average = get_average_rate("EUR", "INR")
     eur_signal = get_buy_signal(eur_inr, eur_average)
     eur_volatility = get_volatility("EUR", "INR")
     eur_volatility_label = get_volatility_label(eur_volatility)
 
-    gbp_inr = get_exchange_rate("GBP", "INR")
+    gbp_inr = fetched_rates.get("GBP")
     gbp_average = get_average_rate("GBP", "INR")
     gbp_signal = get_buy_signal(gbp_inr, gbp_average)
     gbp_volatility = get_volatility("GBP", "INR")
     gbp_volatility_label = get_volatility_label(gbp_volatility)
 
-    jpy_inr = get_exchange_rate("JPY", "INR")
+    jpy_inr = fetched_rates.get("JPY")
     jpy_average = get_average_rate("JPY", "INR")
     jpy_signal = get_buy_signal(jpy_inr, jpy_average)
     jpy_volatility = get_volatility("JPY", "INR")
     jpy_volatility_label = get_volatility_label(jpy_volatility)
 
-    aed_inr = get_exchange_rate("AED", "INR")
+    aed_inr = fetched_rates.get("AED")
     aed_average = get_average_rate("AED", "INR")
     aed_signal = get_buy_signal(aed_inr, aed_average)
     aed_volatility = get_volatility("AED", "INR")
     aed_volatility_label = get_volatility_label(aed_volatility)
-
-    # Only save valid non-None rates to protect database integrity
-    for currency, rate in [
-        ("USD", usd_inr),
-        ("EUR", eur_inr),
-        ("GBP", gbp_inr),
-        ("JPY", jpy_inr),
-        ("AED", aed_inr)
-    ]:
-        if rate is not None:
-            save_rate(currency, "INR", rate)
 
     return render_template(
         "index.html",
@@ -375,16 +424,17 @@ def history():
     if currency not in ALLOWED_CURRENCIES:
         currency = "USD"
 
-    # Year parameter for Graph 2 (Historical Monthly Graph: 2000 to 2026)
-    year_arg = request.args.get("year", "2026")
+    # Year parameter for Graph 2 (Historical Monthly Graph)
+    current_max_year = get_max_historical_year()
+    year_arg = request.args.get("year", str(current_max_year))
     try:
         selected_year = int(year_arg)
-        if selected_year < 2000:
-            selected_year = 2000
-        elif selected_year > 2026:
-            selected_year = 2026
+        if selected_year < MIN_HISTORICAL_YEAR:
+            selected_year = MIN_HISTORICAL_YEAR
+        elif selected_year > current_max_year:
+            selected_year = current_max_year
     except ValueError:
-        selected_year = 2026
+        selected_year = current_max_year
 
     start_date = request.args.get("start_date", "").strip()
     end_date = request.args.get("end_date", "").strip()
@@ -424,7 +474,7 @@ def history():
     # Compute daily trend colors for Graph 1
     daily_dates, daily_rates, daily_colors = compute_daily_trends(history_data)
 
-    # Graph 2: Monthly Historical Averages (2000-2026)
+    # Graph 2: Monthly Historical Averages
     monthly_data = get_monthly_data_for_year(currency, "INR", selected_year)
 
     return render_template(
@@ -441,7 +491,7 @@ def history():
         min_date=min_date,
         max_date=max_date,
         selected_year=selected_year,
-        years=ALLOWED_YEARS,
+        years=get_allowed_years(),
         monthly_data=monthly_data
     )
 
@@ -457,10 +507,11 @@ def api_historical_monthly():
     if currency not in ALLOWED_CURRENCIES:
         currency = "USD"
 
+    current_max_year = get_max_historical_year()
     try:
-        year = int(request.args.get("year", 2026))
-        if year < 2000 or year > 2026:
-            return jsonify({"success": False, "error": "Year must be between 2000 and 2026."}), 400
+        year = int(request.args.get("year", current_max_year))
+        if year < MIN_HISTORICAL_YEAR or year > current_max_year:
+            return jsonify({"success": False, "error": f"Year must be between {MIN_HISTORICAL_YEAR} and {current_max_year}."}), 400
     except ValueError:
         return jsonify({"success": False, "error": "Invalid year format."}), 400
 
@@ -545,16 +596,29 @@ def get_reference_rate(currency):
     """
     Reference (mid-market) rate in INR per 1 unit of `currency`.
 
-    Tries the live API first. If that fails, falls back to the newest rate saved in
-    SQLite and reports how old it is. Returns a dict, or None if nothing is available.
+    Tries the live API first. If that succeeds, preserves the actual API
+    publication date (avoiding labeling an older holiday/weekend quote as new).
+    If live API is unavailable, falls back to the newest rate saved in SQLite.
     """
     live = get_exchange_rate(currency, "INR")
     if live is not None:
+        api_date = get_latest_api_date(currency, "INR")
+        today_str = datetime.now().strftime("%Y-%m-%d")
+        if api_date and api_date == today_str:
+            as_of_text = datetime.now().strftime("%d %B %Y, %I:%M %p")
+            source_desc = f"Frankfurter API, mid-market rate (published today, {api_date})"
+        elif api_date:
+            as_of_text = f"{api_date} (market close)"
+            source_desc = f"Frankfurter API, mid-market rate (published {api_date})"
+        else:
+            as_of_text = datetime.now().strftime("%d %B %Y, %I:%M %p")
+            source_desc = "Frankfurter API, mid-market rate"
+
         return {
             "rate": float(live),
             "is_live": True,
-            "as_of": datetime.now().strftime("%d %B %Y, %I:%M %p"),
-            "source": "Frankfurter API, mid-market rate",
+            "as_of": as_of_text,
+            "source": source_desc,
         }
 
     cached = get_latest_rate_with_date(currency, "INR")
@@ -727,9 +791,42 @@ def travel_planner():
 
 @app.route("/convert", methods=["POST"])
 def convert():
-    from_currency = request.form["from_currency"].upper()
-    to_currency = request.form["to_currency"].upper()
-    amount = float(request.form["amount"])
+    supported_currencies = ALLOWED_CURRENCIES + ["INR"]
+    from_currency = request.form.get("from_currency", "").strip().upper()
+    to_currency = request.form.get("to_currency", "").strip().upper()
+    raw_amount = request.form.get("amount", "").strip()
+
+    # 1. Validate currencies against supported list
+    if not from_currency or not to_currency:
+        flash("Both source and destination currencies are required.", "error")
+        return render_template("converter.html"), 400
+
+    if from_currency not in supported_currencies or to_currency not in supported_currencies:
+        flash("Invalid currency selection. Supported currencies: USD, EUR, GBP, JPY, AED, INR.", "error")
+        return render_template("converter.html"), 400
+
+    # 2. Server-side validation of amount: reject empty, non-numeric, NaN, inf, zero, negative
+    if not raw_amount:
+        flash("Please enter an amount to convert.", "error")
+        return render_template("converter.html"), 400
+
+    try:
+        amount = float(raw_amount)
+    except (ValueError, TypeError):
+        flash("Amount must be a valid numeric value.", "error")
+        return render_template("converter.html"), 400
+
+    if math.isnan(amount) or math.isinf(amount):
+        flash("Amount must be a finite valid number.", "error")
+        return render_template("converter.html"), 400
+
+    if amount <= 0:
+        flash("Amount must be greater than zero.", "error")
+        return render_template("converter.html"), 400
+
+    if amount > 1e12:
+        flash("Amount exceeds the maximum allowable conversion limit.", "error")
+        return render_template("converter.html"), 400
 
     rate = get_exchange_rate(from_currency, to_currency)
 
@@ -745,18 +842,12 @@ def convert():
             rate = 1.0
 
     if rate is None:
-        return """
-        <h1>Conversion Error</h1>
-
-     <p>
-        We could not retrieve the exchange rate right now.
-        Please check your internet connection and try again.
-        </p>
-
-        <br>
-
-        <a href="/">← Back to Dashboard</a>
-        """
+        flash(
+            "We could not retrieve the exchange rate right now. "
+            "Please check your internet connection and try again.",
+            "error"
+        )
+        return render_template("converter.html"), 503
 
     converted_amount = amount * rate
     rupee_status = ""
