@@ -6,119 +6,221 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}International Currency Exchange Rate Tracker{% endblock %}</title>
 
-    <!-- Sovereign Stylesheet -->
+    <!-- Google Fonts: Inter, Plus Jakarta Sans, JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Global Wealth Master Stylesheet -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
     {% block head %}{% endblock %}
 </head>
 
-<body{% if session.get('user_id') %} class="acct-logged-in"{% endif %}>
+<body class="gw-theme{% if session.get('user_id') %} acct-logged-in{% endif %}">
     <!-- Accessibility Skip Link -->
     <a href="#main-content" class="skip-link">Skip to main content</a>
-{% if session.get('user_id') %}{% include "_account_header.html" %}{% else %}
-    <!-- Global Application Header -->
-    <header class="site-header">
-        <div class="container header-inner">
-            <a href="/" class="brand-group" aria-label="International Currency Exchange Rate Tracker Home">
-                <div class="brand-seal" aria-hidden="true">💱</div>
-                <div class="brand-text">
-                    <h1>International Currency Exchange Rate Tracker</h1>
-                    <div class="brand-tagline">Bureau de Change & Analytics Ledger</div>
+
+    <!-- Unified Single-Row Sticky Top Navigation Bar -->
+    <header class="app-topbar site-header" id="siteHeader">
+        <div class="topbar-inner">
+            <!-- Left: Brand Emblem + Title -->
+            <a href="/" class="topbar-brand" aria-label="Global Wealth Currency Tracker Home">
+                <div class="topbar-logo-icon" aria-hidden="true">
+                    <svg class="gw-svg-icon icon-globe" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="2" y1="12" x2="22" y2="12"></line>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                    </svg>
                 </div>
+                <div class="topbar-brand-text">
+                    <span class="topbar-brand-name">Global Wealth</span>
+                    <span class="topbar-brand-sub">Currency Tracker</span>
+                </div>
+                <span class="sr-only">International Currency Exchange Rate Tracker</span>
             </a>
 
-            <button class="menu-toggle" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="primaryNav">
-                ☰
-            </button>
-
-            <nav id="primaryNav" class="nav-menu" aria-label="Main Navigation">
-                <a href="/" class="nav-link {% if request.path == '/' %}active{% endif %}">Dashboard</a>
-                <a href="/converter" class="nav-link {% if request.path == '/converter' or active == 'converter' %}active{% endif %}">Converter</a>
-                <a href="/history" class="nav-link {% if request.path.startswith('/history') or active == 'history' %}active{% endif %}">History</a>
-                <a href="{{ url_for('decision_assistant') }}" class="nav-link {% if request.path == '/decision-assistant' or active == 'decision' %}active{% endif %}">Decision Assistant</a>
-                <a href="{{ url_for('travel_planner') }}" class="nav-link {% if request.path == '/travel-planner' or active == 'travel' %}active{% endif %}">Travel Planner</a>
-                <a href="/about" class="nav-link {% if request.path == '/about' or active == 'about' %}active{% endif %}">About</a>
-
-                <span class="nav-divider" aria-hidden="true"></span>
-
-                {% if session.get('username') %}
-                    <span class="nav-user-badge" title="Logged in user">👤 {{ session['username'] }}</span>
-                    <a href="{{ url_for('logout') }}" class="nav-link">Log out</a>
-                {% else %}
-                    <a href="{{ url_for('login') }}" class="nav-link {% if request.path == '/login' or active == 'login' %}active{% endif %}">Log in</a>
-                {% endif %}
+            <!-- Center: Horizontal Navigation Links -->
+            <nav class="topbar-nav" id="topbarNav" aria-label="Primary Portal Navigation">
+                <a href="{{ '/dashboard' if session.get('user_id') else '/' }}" class="topbar-pill {% if request.path == '/' or request.path == '/dashboard' or active == 'dashboard' %}active{% endif %}">
+                    <svg class="gw-nav-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="/converter" class="topbar-pill {% if request.path == '/converter' or active == 'converter' %}active{% endif %}">
+                    <svg class="gw-nav-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 3 4 4-4 4"></path><path d="M20 7H4"></path><path d="m8 21-4-4 4-4"></path><path d="M4 17h16"></path></svg>
+                    <span>Converter</span>
+                </a>
+                <a href="/history" class="topbar-pill {% if request.path.startswith('/history') or active == 'history' %}active{% endif %}">
+                    <svg class="gw-nav-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
+                    <span>Market History</span>
+                </a>
+                <a href="{{ '/my-currencies' if session.get('user_id') else '/login' }}" class="topbar-pill {% if request.path == '/my-currencies' or active == 'currencies' %}active{% endif %}">
+                    <svg class="gw-nav-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    <span>My Currencies</span>
+                </a>
+                <a href="{{ url_for('decision_assistant') }}" class="topbar-pill {% if request.path == '/decision-assistant' or active == 'decision' %}active{% endif %}">
+                    <svg class="gw-nav-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="3" x2="12" y2="21"></line><polyline points="8 8 4 14 12 14"></polyline><polyline points="16 8 20 14 12 14"></polyline></svg>
+                    <span>Decision Assistant</span>
+                </a>
+                <a href="{{ url_for('travel_planner') }}" class="topbar-pill {% if request.path == '/travel-planner' or active == 'travel' %}active{% endif %}">
+                    <svg class="gw-nav-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"></path></svg>
+                    <span>Travel Planner</span>
+                </a>
+                <a href="{{ '/my-currencies#alerts' if session.get('user_id') else '/login' }}" class="topbar-pill {% if request.path == '/my-currencies' and '#alerts' in request.url %}active{% endif %}">
+                    <svg class="gw-nav-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>
+                    <span>Rate Alerts</span>
+                </a>
             </nav>
-        </div>
-    </header>{% endif %}
 
-    {% block hero %}{% endblock %}
-
-    <!-- Main Content Area -->
-    <main id="main-content" class="page-container">
-        <div class="container">
-            <!-- Flash Messages -->
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="{{ 'errors' if category == 'error' else 'notice' }}" role="status">
-                            {{ message }}
+            <!-- Right: User Profile Dropdown or Guest Login -->
+            <div class="topbar-actions">
+                {% if session.get('username') %}
+                    <div class="acct-dropdown">
+                        <button type="button" class="acct-user-btn" id="acctUserBtn" aria-expanded="false" aria-haspopup="true" aria-controls="acctDropdownMenu" aria-label="User account menu for {{ session.get('username') }}">
+                            <span class="acct-user-avatar" aria-hidden="true">{{ session['username'][0]|upper }}</span>
+                            <span class="acct-username-truncated" title="{{ session.get('username') }}">{{ session.get('username') }}</span>
+                            <svg class="acct-caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </button>
+                        <div id="acctDropdownMenu" class="acct-dropdown-menu" role="menu" aria-labelledby="acctUserBtn">
+                            <div class="dropdown-header">
+                                <div class="dropdown-user-name" title="{{ session.get('username') }}">{{ session.get('username') }}</div>
+                                <div class="dropdown-user-badge">Institutional Member</div>
+                            </div>
+                            <a href="/dashboard" class="acct-dropdown-item" role="menuitem">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
+                                <span>Personal Dashboard</span>
+                            </a>
+                            <a href="/my-currencies" class="acct-dropdown-item" role="menuitem">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                                <span>My Currencies</span>
+                            </a>
+                            <a href="/my-conversions" class="acct-dropdown-item" role="menuitem">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m16 3 4 4-4 4"></path><path d="M20 7H4"></path><path d="m8 21-4-4 4-4"></path><path d="M4 17h16"></path></svg>
+                                <span>My Conversions</span>
+                            </a>
+                            <a href="/my-travel-plans" class="acct-dropdown-item" role="menuitem">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"></path></svg>
+                                <span>My Travel Plans</span>
+                            </a>
+                            <a href="/my-decisions" class="acct-dropdown-item" role="menuitem">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><line x1="12" y1="3" x2="12" y2="21"></line><polyline points="8 8 4 14 12 14"></polyline><polyline points="16 8 20 14 12 14"></polyline></svg>
+                                <span>My Decisions</span>
+                            </a>
+                            <a href="/account" class="acct-dropdown-item" role="menuitem">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                                <span>Account Settings</span>
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a href="{{ url_for('logout') }}" class="acct-dropdown-item acct-dropdown-logout" role="menuitem">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                                <span>Log out</span>
+                            </a>
                         </div>
-                    {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="topbar-guest-actions">
+                        <a href="{{ url_for('login') }}" class="topbar-guest-login {% if request.path == '/login' %}active{% endif %}">Log in</a>
+                        <a href="{{ url_for('register') }}" class="topbar-guest-register">Register</a>
+                    </div>
                 {% endif %}
-            {% endwith %}
 
-            {% block content %}{% endblock %}
-        </div>
-    </main>
-
-    <!-- Global Application Footer -->
-    <footer class="site-footer">
-        <div class="container">
-            <div class="footer-grid">
-                <div class="footer-col">
-                    <h4>International Currency Exchange Rate Tracker</h4>
-                    <p style="margin-top: 8px;">
-                        A specialized financial planning portal delivering verified exchange rate tracking, 
-                        30-day volatility monitoring, and currency conversion against the Indian Rupee (INR).
-                    </p>
-                    <p class="muted" style="margin-top: 12px; font-size: 0.8125rem;">
-                        Reference rates sourced from mid-market data observations (Frankfurter API). 
-                        Planning estimates only, not financial advice.
-                    </p>
-                </div>
-
-                <div class="footer-col">
-                    <h4>Direct Navigation</h4>
-                    <ul>
-                        <li><a href="/">Rates Dashboard</a></li>
-                        <li><a href="/converter">Currency Converter</a></li>
-                        <li><a href="/history">Historical Analytics</a></li>
-                        <li><a href="/decision-assistant">Forex Decision Assistant</a></li>
-                        <li><a href="/travel-planner">Travel Money Planner</a></li>
-                        <li><a href="/about">About This Project</a></li>
-                    </ul>
-                </div>
-
-                <div class="footer-col">
-                    <h4>Important Notice</h4>
-                    <p>
-                        This portal is an independent analytical tool and not an authorised foreign exchange dealer. 
-                        Always verify final quotes and fees with RBI-regulated providers before transacting.
-                    </p>
-                </div>
-            </div>
-
-            <div class="footer-bottom">
-                <div>&copy; 2026 International Currency Exchange Rate Tracker. All rights reserved.</div>
-                <div>Designed with Sovereign Banknote Standards & Accessible Web Architecture.</div>
+                <!-- Mobile Hamburger Button -->
+                <button class="topbar-menu-toggle menu-toggle acct-menu-toggle" id="mobileNavToggle" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="topbarNav">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="18" x2="20" y2="18"></line></svg>
+                </button>
             </div>
         </div>
-    </footer>
+    </header>
+
+    <!-- Main Content Shell (Full Width) -->
+    <div class="app-main">
+        <!-- Hero Section (e.g. Scene 1 & Split-Flap Board on index.html) -->
+        {% block hero %}{% endblock %}
+
+        <!-- Main Content Area -->
+        <main id="main-content" class="page-container">
+            <div class="container">
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <div class="flash-messages-group">
+                            {% for category, message in messages %}
+                                <div class="flash-alert {{ 'flash-error' if category == 'error' else 'flash-notice' }}" role="status">
+                                    <span class="flash-icon" aria-hidden="true">
+                                        {% if category == 'error' %}
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                                        {% else %}
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                        {% endif %}
+                                    </span>
+                                    <span class="flash-text">{{ message }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+
+        <!-- Global Application Footer -->
+        <footer class="site-footer">
+            <div class="container">
+                <div class="footer-grid">
+                    <div class="footer-col">
+                        <div class="footer-brand-title">
+                            <svg class="gw-footer-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                            <h4>Global Wealth &bull; International Currency Exchange Rate Tracker</h4>
+                        </div>
+                        <p style="margin-top: 10px;">
+                            A specialized institutional financial portal delivering verified mid-market exchange rate tracking, 
+                            30-day volatility monitoring, and currency conversion against the Indian Rupee (INR).
+                        </p>
+                        <p class="muted" style="margin-top: 12px; font-size: 0.8125rem;">
+                            Reference rates sourced from mid-market European Central Bank data observations (Frankfurter API). 
+                            For planning and analysis purposes only; not financial advice.
+                        </p>
+                    </div>
+
+                    <div class="footer-col">
+                        <h4>Direct Navigation</h4>
+                        <ul>
+                            <li><a href="/">Rates Dashboard</a></li>
+                            <li><a href="/converter">Currency Converter</a></li>
+                            <li><a href="/history">Historical Analytics</a></li>
+                            <li><a href="/decision-assistant">Forex Decision Assistant</a></li>
+                            <li><a href="/travel-planner">Travel Money Planner</a></li>
+                            <li><a href="/about">About This Project</a></li>
+                        </ul>
+                    </div>
+
+                    <div class="footer-col">
+                        <h4>Important Notice</h4>
+                        <p>
+                            This portal is an independent analytical tool and not an authorised foreign exchange dealer. 
+                            Always verify final quotes and fees with RBI-regulated authorized dealers before transacting.
+                        </p>
+                        <div class="footer-security-seal">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                            <span>256-bit Secure Analytical Engine</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="footer-bottom">
+                    <div>&copy; 2026 International Currency Exchange Rate Tracker. All rights reserved.</div>
+                    <div class="footer-badge">Institutional Wealth-Tech Architecture &bull; Accessible Standards</div>
+                </div>
+            </div>
+        </footer>
+    </div>
 
     <!-- Main Scripts -->
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>{% if session.get('user_id') %}
-    <script src="{{ url_for('static', filename='js/acct_nav.js') }}"></script>{% endif %}
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% if session.get('user_id') %}
+    <script src="{{ url_for('static', filename='js/acct_nav.js') }}"></script>
+    {% endif %}
     {% block scripts %}{% endblock %}
 </body>
 
 </html>
-

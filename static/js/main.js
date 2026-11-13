@@ -1,34 +1,35 @@
 /**
  * International Currency Exchange Rate Tracker - Front-end Engine
+ * Global Wealth Institutional Theme & Unified Top Navigation
  * Split-flap departure board simulation, smooth entrance, and mobile navigation.
  */
 
 document.addEventListener("DOMContentLoaded", function () {
-    // 1. Accessible Mobile Navigation
-    const menuToggle = document.querySelector(".menu-toggle");
-    const navMenu = document.querySelector(".nav-menu");
+    // 1. Unified Mobile Top Navigation Menu Toggle
+    const mobileToggle = document.getElementById("mobileNavToggle") || document.querySelector(".topbar-menu-toggle");
+    const topbarNav = document.getElementById("topbarNav");
 
-    if (menuToggle && navMenu) {
-        menuToggle.addEventListener("click", function () {
-            const isExpanded = menuToggle.getAttribute("aria-expanded") === "true";
-            menuToggle.setAttribute("aria-expanded", !isExpanded);
-            navMenu.classList.toggle("open");
+    if (mobileToggle && topbarNav) {
+        mobileToggle.addEventListener("click", function (e) {
+            e.stopPropagation();
+            const isOpen = topbarNav.classList.toggle("open");
+            mobileToggle.setAttribute("aria-expanded", String(isOpen));
         });
 
-        // Close menu when clicking outside
-        document.addEventListener("click", function (event) {
-            if (!menuToggle.contains(event.target) && !navMenu.contains(event.target)) {
-                navMenu.classList.remove("open");
-                menuToggle.setAttribute("aria-expanded", "false");
+        // Close mobile menu when clicking outside
+        document.addEventListener("click", function (e) {
+            if (!mobileToggle.contains(e.target) && !topbarNav.contains(e.target)) {
+                topbarNav.classList.remove("open");
+                mobileToggle.setAttribute("aria-expanded", "false");
             }
         });
 
-        // Close on Escape key
+        // Close mobile menu on Escape key
         document.addEventListener("keydown", function (e) {
-            if (e.key === "Escape" && navMenu.classList.contains("open")) {
-                navMenu.classList.remove("open");
-                menuToggle.setAttribute("aria-expanded", "false");
-                menuToggle.focus();
+            if (e.key === "Escape" && topbarNav.classList.contains("open")) {
+                topbarNav.classList.remove("open");
+                mobileToggle.setAttribute("aria-expanded", "false");
+                mobileToggle.focus();
             }
         });
     }
@@ -73,4 +74,3 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 });
-

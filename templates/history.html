@@ -8,12 +8,14 @@
 <style>
     /* Historical Graph Specific Layout Rules */
     .filter-card {
-        background: var(--paper-card);
-        border: 1px solid var(--engraved-border);
-        border-radius: var(--radius-md);
+        background: var(--forest-glass-card);
+        backdrop-filter: var(--glass-blur);
+        -webkit-backdrop-filter: var(--glass-blur);
+        border: var(--glass-border);
+        border-radius: var(--radius-lg);
         padding: var(--sp-6);
         margin-bottom: var(--sp-6);
-        box-shadow: var(--shadow-sm);
+        box-shadow: var(--shadow-md);
     }
 
     .filter-grid {
@@ -37,21 +39,22 @@
 
     .btn-reset {
         padding: 10px 16px;
-        background: var(--paper-cream);
-        color: var(--text-primary);
+        background: rgba(20, 184, 166, 0.12);
+        color: var(--text-pure);
         text-decoration: none;
         border-radius: var(--radius-sm);
-        border: 1px solid var(--engraved-border);
+        border: var(--glass-border);
         font-weight: 600;
         font-size: 0.875rem;
-        transition: background var(--transition-fast);
+        transition: all var(--transition-fast);
         display: inline-flex;
         align-items: center;
         justify-content: center;
     }
 
     .btn-reset:hover {
-        background: var(--engraved-border);
+        background: rgba(20, 184, 166, 0.25);
+        color: #ffffff;
     }
 
     .preset-buttons {
@@ -61,13 +64,13 @@
         align-items: center;
         margin-top: var(--sp-4);
         padding-top: var(--sp-4);
-        border-top: 1px dashed var(--engraved-border);
+        border-top: 1px dashed rgba(20, 184, 166, 0.2);
     }
 
     .preset-btn {
-        background: #ffffff;
-        border: 1px solid var(--engraved-border);
-        color: var(--text-secondary);
+        background: rgba(6, 32, 26, 0.7);
+        border: var(--glass-border);
+        color: var(--text-mint);
         padding: 6px 12px;
         border-radius: var(--radius-sm);
         font-size: 0.8125rem;
@@ -77,9 +80,10 @@
     }
 
     .preset-btn:hover, .preset-btn.active {
-        background: var(--mint-accent);
-        border-color: var(--mint-hover);
+        background: var(--emerald-pill-gradient);
+        border-color: var(--emerald-primary);
         color: #ffffff;
+        box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
     }
 
     /* Trend Legends */
@@ -89,12 +93,12 @@
         gap: var(--sp-4);
         flex-wrap: wrap;
         padding: var(--sp-3) var(--sp-4);
-        background: var(--paper-warm);
+        background: rgba(6, 32, 26, 0.6);
         border-radius: var(--radius-sm);
         font-size: 0.8125rem;
-        color: var(--text-secondary);
+        color: var(--text-mint);
         margin-bottom: var(--sp-4);
-        border: 1px solid var(--engraved-subtle);
+        border: var(--glass-border-subtle);
     }
 
     .legend-item {
@@ -111,9 +115,9 @@
         display: inline-block;
     }
 
-    .legend-green { background: #16A34A; }
-    .legend-red { background: #DC2626; }
-    .legend-neutral { background: #64748B; }
+    .legend-green { background: #10B981; box-shadow: 0 0 8px #10B981; }
+    .legend-red { background: #EF4444; box-shadow: 0 0 8px #EF4444; }
+    .legend-neutral { background: #94A3B8; }
     .legend-missing { background: #d1d5db; border: 1px dashed #9ca3af; }
 
     .chart-container {
@@ -154,8 +158,8 @@
 
     .nav-year-btn {
         padding: 8px 14px;
-        background: #ffffff;
-        border: 1px solid var(--engraved-border);
+        background: rgba(7, 38, 31, 0.8);
+        border: var(--glass-border);
         border-radius: var(--radius-sm);
         color: var(--text-primary);
         font-weight: 600;
@@ -193,8 +197,8 @@
         border-radius: var(--radius-sm);
         font-size: 0.75rem;
         font-weight: 600;
-        background: #ffffff;
-        border: 1px solid var(--engraved-border);
+        background: rgba(7, 38, 31, 0.8);
+        border: var(--glass-border);
         color: var(--text-secondary);
         cursor: pointer;
         transition: all var(--transition-fast);
@@ -215,11 +219,13 @@
     }
 
     .summary-card {
-        background: #ffffff;
-        border: 1px solid var(--engraved-border);
+        background: var(--forest-glass-card);
+        backdrop-filter: var(--glass-blur);
+        -webkit-backdrop-filter: var(--glass-blur);
+        border: var(--glass-border);
         border-radius: var(--radius-sm);
         padding: var(--sp-3) var(--sp-4);
-        border-left: 4px solid var(--mint-accent);
+        border-left: 4px solid var(--emerald-primary);
     }
 
     .summary-card.high { border-left-color: #16A34A; }
@@ -607,8 +613,8 @@
                 datasets: [{
                     label: "{{ selected_currency }} → INR Daily Rate",
                     data: rates,
-                    borderColor: "#155239",
-                    backgroundColor: "rgba(21, 82, 57, 0.06)",
+                    borderColor: "#10B981",
+                    backgroundColor: "rgba(16, 185, 129, 0.12)",
                     borderWidth: 2.5,
                     tension: 0.25,
                     fill: true,
@@ -616,29 +622,29 @@
                         borderColor: function (ctx) {
                             if (!ctx.p0 || !ctx.p1) return "#155239";
                             if (ctx.p1.parsed.y > ctx.p0.parsed.y) {
-                                return "#16A34A"; // Rate increased (Green)
+                                return "#10B981"; // Rate increased (Green)
                             } else if (ctx.p1.parsed.y < ctx.p0.parsed.y) {
-                                return "#DC2626"; // Rate decreased (Red)
+                                return "#EF4444"; // Rate decreased (Red)
                             } else {
-                                return "#64748B"; // Rate unchanged (Neutral Slate)
+                                return "#94A3B8"; // Rate unchanged (Neutral Slate)
                             }
                         }
                     },
                     pointBackgroundColor: function (context) {
                         const index = context.dataIndex;
                         const d = context.dataset.data;
-                        if (index === 0) return "#64748B";
-                        if (d[index] > d[index - 1]) return "#16A34A";
-                        if (d[index] < d[index - 1]) return "#DC2626";
-                        return "#64748B";
+                        if (index === 0) return "#94A3B8";
+                        if (d[index] > d[index - 1]) return "#10B981";
+                        if (d[index] < d[index - 1]) return "#EF4444";
+                        return "#94A3B8";
                     },
                     pointBorderColor: function (context) {
                         const index = context.dataIndex;
                         const d = context.dataset.data;
-                        if (index === 0) return "#64748B";
-                        if (d[index] > d[index - 1]) return "#16A34A";
-                        if (d[index] < d[index - 1]) return "#DC2626";
-                        return "#64748B";
+                        if (index === 0) return "#94A3B8";
+                        if (d[index] > d[index - 1]) return "#10B981";
+                        if (d[index] < d[index - 1]) return "#EF4444";
+                        return "#94A3B8";
                     },
                     pointRadius: dates.length > 40 ? 3 : 5,
                     pointHoverRadius: 7
@@ -680,7 +686,7 @@
                             text: "Exchange Rate (INR)",
                             font: { family: "'Plus Jakarta Sans', sans-serif", weight: "600" }
                         },
-                        grid: { color: "rgba(222, 217, 205, 0.4)" }
+                        grid: { color: "rgba(20, 184, 166, 0.12)" }, ticks: { color: "#94B0A8" }
                     },
                     x: {
                         title: {
@@ -727,10 +733,10 @@
                     break;
                 }
             }
-            if (prev === null) return "#64748B";
-            if (r > prev) return "#16A34A";
-            if (r < prev) return "#DC2626";
-            return "#64748B";
+            if (prev === null) return "#94A3B8";
+            if (r > prev) return "#10B981";
+            if (r < prev) return "#EF4444";
+            return "#94A3B8";
         });
 
         if (monthlyChart) {
@@ -752,8 +758,8 @@
                     label: currency + " → INR Monthly Average (" + year + ")",
                     data: rates,
                     counts: counts,
-                    borderColor: "#155239",
-                    backgroundColor: "rgba(21, 82, 57, 0.05)",
+                    borderColor: "#10B981",
+                    backgroundColor: "rgba(16, 185, 129, 0.08)",
                     borderWidth: 3,
                     tension: 0.25,
                     fill: false,
@@ -763,9 +769,9 @@
                             if (!ctx.p0 || !ctx.p1) return "#155239";
                             const y0 = ctx.p0.parsed.y;
                             const y1 = ctx.p1.parsed.y;
-                            if (y1 > y0) return "#16A34A";
-                            if (y1 < y0) return "#DC2626";
-                            return "#64748B";
+                            if (y1 > y0) return "#10B981";
+                            if (y1 < y0) return "#EF4444";
+                            return "#94A3B8";
                         }
                     },
                     pointBackgroundColor: pointColors,
@@ -819,7 +825,7 @@
                             text: "Monthly Average Rate (INR)",
                             font: { family: "'Plus Jakarta Sans', sans-serif", weight: "600" }
                         },
-                        grid: { color: "rgba(222, 217, 205, 0.4)" }
+                        grid: { color: "rgba(20, 184, 166, 0.12)" }, ticks: { color: "#94B0A8" }
                     },
                     x: {
                         title: {

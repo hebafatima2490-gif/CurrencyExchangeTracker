@@ -4,34 +4,55 @@
 
 {% block account_content %}
 <div class="acct-dashboard">
-    <!-- Welcome Header -->
-    <header class="acct-welcome-header">
-        <div class="acct-welcome-info">
-            <h1 class="acct-welcome-title">Welcome back, <span class="acct-username-highlight">{{ username }}</span></h1>
-            <p class="acct-member-since">
-                <span class="acct-meta-icon" aria-hidden="true">📅</span>
-                Member since: <span class="acct-date-text">{{ created_at }}</span>
-            </p>
+    <!-- Welcome Hero Banner (Wide Glass Card with User Avatar & Dot-Matrix Backdrop) -->
+    <header class="acct-welcome-header gw-hero-card">
+        <div class="gw-hero-backdrop" aria-hidden="true"></div>
+        <div class="acct-welcome-left">
+            <div class="gw-user-avatar" aria-hidden="true">
+                <span>{{ username[0]|upper }}</span>
+                <span class="gw-avatar-ring"></span>
+            </div>
+            <div class="acct-welcome-info">
+                <div class="gw-badge-pill">
+                    <span class="gw-badge-dot"></span>
+                    <span>Institutional Client</span>
+                </div>
+                <h1 class="acct-welcome-title">Welcome back, <span class="acct-username-highlight">{{ username }}</span></h1>
+                <p class="acct-member-since">
+                    <svg class="gw-inline-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                    <span>Member since: <span class="acct-date-text">{{ created_at }}</span></span>
+                </p>
+            </div>
         </div>
         <div class="acct-welcome-actions">
-            <a href="/" class="acct-action-btn">
-                <span aria-hidden="true">←</span> Return to Live Exchange Rates
+            <a href="/" class="acct-action-btn gw-gold-pill-btn">
+                <svg class="gw-inline-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                <span>Return to Live Exchange Rates</span>
+            </a>
+            <a href="/converter" class="acct-action-btn gw-emerald-pill-btn">
+                <svg class="gw-inline-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                <span>Quick Convert</span>
             </a>
         </div>
     </header>
 
-    <!-- Triggered Rate Alerts Section -->
+    <!-- Triggered Rate Alerts Section / Compact Glass Alert Strip -->
     <section class="acct-section acct-alerts-section" aria-labelledby="acctAlertsHeading">
         <div class="acct-section-header">
-            <h2 id="acctAlertsHeading" class="acct-section-title">
-                <span class="acct-section-icon" aria-hidden="true">🔔</span> Rate Alerts
-            </h2>
+            <div class="gw-section-title-wrap">
+                <svg class="gw-section-badge-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>
+                <h2 id="acctAlertsHeading" class="acct-section-title">Rate Alerts</h2>
+            </div>
+            <a href="/my-currencies#alerts" class="gw-section-link">
+                <span>Manage Alerts</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+            </a>
         </div>
 
         {% if triggered_alerts and triggered_alerts|length > 0 %}
             <div class="acct-alerts-list">
                 {% for alert in triggered_alerts %}
-                    <div class="acct-alert-card" role="status">
+                    <div class="acct-alert-card gw-alert-glass-strip" role="status">
                         <div class="acct-alert-badge">
                             <span class="acct-alert-currency">{{ alert.currency }}</span>
                             <span class="acct-alert-direction {{ alert.direction }}">{{ alert.direction|upper }}</span>
@@ -45,61 +66,87 @@
                                 <span class="acct-alert-date">(Observation Date: {{ alert.triggered_rate_date or 'Recorded in database' }})</span>
                             </p>
                         </div>
+                        <div class="gw-alert-glow-pill">Threshold Breached</div>
                     </div>
                 {% endfor %}
             </div>
         {% else %}
-            <div class="acct-empty-alerts">
-                <p class="acct-empty-text">No active triggered rate alerts at this time. All watched thresholds are nominal.</p>
+            <div class="acct-empty-alerts gw-empty-glass-card">
+                <div class="gw-empty-icon" aria-hidden="true">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                </div>
+                <div class="gw-empty-body">
+                    <p class="acct-empty-text">No active triggered rate alerts at this time. All watched thresholds are nominal.</p>
+                    <p class="gw-empty-subtext">Set automated threshold notifications in <a href="/my-currencies">My Currencies</a> to track Rupee volatility.</p>
+                </div>
             </div>
         {% endif %}
     </section>
 
-    <!-- Summary Cards Grid -->
+    <!-- Summary Cards Grid (4-Column Institutional Architecture) -->
     <section class="acct-section acct-summary-section" aria-labelledby="acctSummaryHeading">
         <h2 id="acctSummaryHeading" class="acct-section-title sr-only">Account Overview</h2>
         <div class="acct-summary-grid">
             <!-- 1. Watchlist Currencies -->
-            <a href="/my-currencies" class="acct-card acct-summary-card">
-                <div class="acct-card-icon" aria-hidden="true">⭐</div>
+            <a href="/my-currencies" class="acct-card acct-summary-card gw-summary-card">
+                <div class="gw-card-glow-bg" aria-hidden="true"></div>
+                <div class="acct-card-icon gw-icon-box" aria-hidden="true">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                </div>
                 <div class="acct-card-body">
                     <div class="acct-card-count">{{ watchlist_count }}</div>
                     <div class="acct-card-label">Watchlist Currencies</div>
                 </div>
-                <div class="acct-card-arrow" aria-hidden="true">→</div>
+                <div class="acct-card-arrow gw-card-arrow" aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                </div>
             </a>
 
             <!-- 2. Saved Conversions -->
-            <a href="/my-conversions" class="acct-card acct-summary-card">
-                <div class="acct-card-icon" aria-hidden="true">💱</div>
+            <a href="/my-conversions" class="acct-card acct-summary-card gw-summary-card">
+                <div class="gw-card-glow-bg" aria-hidden="true"></div>
+                <div class="acct-card-icon gw-icon-box" aria-hidden="true">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 4 4-4 4"></path><path d="M20 7H4"></path><path d="m8 21-4-4 4-4"></path><path d="M4 17h16"></path></svg>
+                </div>
                 <div class="acct-card-body">
                     <div class="acct-card-count">{{ conversions_count }}</div>
                     <div class="acct-card-label">Saved Conversions</div>
                 </div>
-                <div class="acct-card-arrow" aria-hidden="true">→</div>
+                <div class="acct-card-arrow gw-card-arrow" aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                </div>
             </a>
 
             <!-- 3. Saved Travel Plans -->
-            <a href="/my-travel-plans" class="acct-card acct-summary-card">
-                <div class="acct-card-icon" aria-hidden="true">✈️</div>
+            <a href="/my-travel-plans" class="acct-card acct-summary-card gw-summary-card">
+                <div class="gw-card-glow-bg" aria-hidden="true"></div>
+                <div class="acct-card-icon gw-icon-box" aria-hidden="true">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"></path></svg>
+                </div>
                 <div class="acct-card-body">
                     <div class="acct-card-count">{{ travel_plans_count }}</div>
                     <div class="acct-card-label">Saved Travel Plans</div>
                 </div>
-                <div class="acct-card-arrow" aria-hidden="true">→</div>
+                <div class="acct-card-arrow gw-card-arrow" aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                </div>
             </a>
 
             <!-- 4. Saved Decision History -->
-            <a href="/my-decisions" class="acct-card acct-summary-card">
-                <div class="acct-card-icon" aria-hidden="true">📊</div>
+            <a href="/my-decisions" class="acct-card acct-summary-card gw-summary-card">
+                <div class="gw-card-glow-bg" aria-hidden="true"></div>
+                <div class="acct-card-icon gw-icon-box" aria-hidden="true">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                </div>
                 <div class="acct-card-body">
                     <div class="acct-card-count">{{ decisions_count }}</div>
                     <div class="acct-card-label">Saved Decision History</div>
                 </div>
-                <div class="acct-card-arrow" aria-hidden="true">→</div>
+                <div class="acct-card-arrow gw-card-arrow" aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                </div>
             </a>
         </div>
     </section>
 </div>
 {% endblock %}
-
