@@ -28,30 +28,30 @@
                 <div class="form-group">
                     <label for="from_currency">From Currency</label>
                     <select id="from_currency" name="from_currency" required>
-                        <option value="USD" selected>USD - US Dollar</option>
-                        <option value="EUR">EUR - Euro</option>
-                        <option value="GBP">GBP - British Pound</option>
-                        <option value="JPY">JPY - Japanese Yen</option>
-                        <option value="AED">AED - UAE Dirham</option>
-                        <option value="INR">INR - Indian Rupee</option>
+                        <option value="USD"{% if default_from == 'USD' %} selected{% endif %}>USD - US Dollar</option>
+                        <option value="EUR"{% if default_from == 'EUR' %} selected{% endif %}>EUR - Euro</option>
+                        <option value="GBP"{% if default_from == 'GBP' %} selected{% endif %}>GBP - British Pound</option>
+                        <option value="JPY"{% if default_from == 'JPY' %} selected{% endif %}>JPY - Japanese Yen</option>
+                        <option value="AED"{% if default_from == 'AED' %} selected{% endif %}>AED - UAE Dirham</option>
+                        <option value="INR"{% if default_from == 'INR' %} selected{% endif %}>INR - Indian Rupee</option>
                     </select>
                 </div>
 
                 <div class="form-group">
                     <label for="to_currency">To Currency</label>
                     <select id="to_currency" name="to_currency" required>
-                        <option value="INR" selected>INR - Indian Rupee</option>
-                        <option value="USD">USD - US Dollar</option>
-                        <option value="EUR">EUR - Euro</option>
-                        <option value="GBP">GBP - British Pound</option>
-                        <option value="JPY">JPY - Japanese Yen</option>
-                        <option value="AED">AED - UAE Dirham</option>
+                        <option value="INR"{% if default_to == 'INR' %} selected{% endif %}>INR - Indian Rupee</option>
+                        <option value="USD"{% if default_to == 'USD' %} selected{% endif %}>USD - US Dollar</option>
+                        <option value="EUR"{% if default_to == 'EUR' %} selected{% endif %}>EUR - Euro</option>
+                        <option value="GBP"{% if default_to == 'GBP' %} selected{% endif %}>GBP - British Pound</option>
+                        <option value="JPY"{% if default_to == 'JPY' %} selected{% endif %}>JPY - Japanese Yen</option>
+                        <option value="AED"{% if default_to == 'AED' %} selected{% endif %}>AED - UAE Dirham</option>
                     </select>
                 </div>
 
                 <div class="form-group">
                     <label for="amount">Amount to Convert</label>
-                    <input type="number" id="amount" name="amount" step="any" min="0.01" value="100" required>
+                    <input type="number" id="amount" name="amount" step="any" min="0.01" value="{{ default_amount }}" required>
                 </div>
             </div>
 

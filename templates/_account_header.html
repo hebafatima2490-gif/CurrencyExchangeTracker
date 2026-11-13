@@ -1,0 +1,41 @@
+<!-- Authenticated User Account Header -->
+<header class="site-header acct-header">
+    <div class="container header-inner">
+        <a href="/" class="brand-group" aria-label="International Currency Exchange Rate Tracker Home">
+            <div class="brand-seal" aria-hidden="true">💱</div>
+            <div class="brand-text">
+                <h1>International Currency Exchange Rate Tracker</h1>
+                <div class="brand-tagline">Bureau de Change & Analytics Ledger</div>
+            </div>
+        </a>
+
+        <button class="acct-menu-toggle" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="acctPrimaryNav">
+            ☰
+        </button>
+
+        <nav id="acctPrimaryNav" class="acct-nav-menu" aria-label="Main Navigation">
+            <a href="/dashboard" class="nav-link acct-nav-link{% if request.path == '/dashboard' or active == 'dashboard' %} active{% endif %}">Dashboard</a>
+            <a href="/converter" class="nav-link acct-nav-link{% if request.path == '/converter' or active == 'converter' %} active{% endif %}">Converter</a>
+            <a href="/history" class="nav-link acct-nav-link{% if request.path.startswith('/history') or active == 'history' %} active{% endif %}">Market History</a>
+            <a href="/decision-assistant" class="nav-link acct-nav-link{% if request.path == '/decision-assistant' or active == 'decision' %} active{% endif %}">Decision Assistant</a>
+            <a href="/travel-planner" class="nav-link acct-nav-link{% if request.path == '/travel-planner' or active == 'travel' %} active{% endif %}">Travel Planner</a>
+
+            <div class="acct-dropdown">
+                <button type="button" class="acct-user-btn" id="acctUserBtn" aria-expanded="false" aria-haspopup="true" aria-controls="acctDropdownMenu" aria-label="User account menu for {{ session.get('username', 'Account') }}">
+                    <span class="acct-user-icon" aria-hidden="true">👤</span>
+                    <span class="acct-username">{{ session.get('username', 'Account') }}</span>
+                    <span class="acct-caret" aria-hidden="true">▾</span>
+                </button>
+                <div id="acctDropdownMenu" class="acct-dropdown-menu" role="menu" aria-labelledby="acctUserBtn">
+                    <a href="/my-currencies" class="acct-dropdown-item" role="menuitem">My Currencies</a>
+                    <a href="/my-conversions" class="acct-dropdown-item" role="menuitem">My Conversions</a>
+                    <a href="/my-travel-plans" class="acct-dropdown-item" role="menuitem">My Travel Plans</a>
+                    <a href="/my-decisions" class="acct-dropdown-item" role="menuitem">My Decisions</a>
+                    <a href="/account" class="acct-dropdown-item" role="menuitem">My Profile</a>
+                    <a href="/logout" class="acct-dropdown-item acct-dropdown-logout" role="menuitem">Logout</a>
+                </div>
+            </div>
+        </nav>
+    </div>
+</header>
+

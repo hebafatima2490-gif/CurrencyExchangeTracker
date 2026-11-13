@@ -158,6 +158,31 @@
         The reference rate is a mid-market rate from a data provider ({{ reference.as_of }}). It is used
         for comparison only. No provider is obliged to offer it, and it is not the official FBIL reference rate.
         This is an estimate to help you decide, not financial advice.</p>
+
+    {% if session.get('user_id') %}
+    <div class="acct-save-result-block">
+        <form method="post" action="/my-decisions/save">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="direction" value="{{ result.direction }}">
+            <input type="hidden" name="currency" value="{{ result.currency }}">
+            <input type="hidden" name="amount" value="{{ result.amount }}">
+            <input type="hidden" name="offer_rate" value="{{ result.offer_rate }}">
+            <input type="hidden" name="quote_unit" value="{{ values.quote_unit }}">
+            <input type="hidden" name="flat_fee" value="{{ result.flat_fee }}">
+            <input type="hidden" name="percent_fee" value="{{ result.percent_fee }}">
+            <input type="hidden" name="other_charges" value="{{ result.other_charges }}">
+            <input type="hidden" name="effective_rate" value="{{ result.effective_rate }}">
+            <input type="hidden" name="reference_rate" value="{{ result.reference_rate }}">
+            <input type="hidden" name="markup_pct" value="{{ result.markup_pct }}">
+            <input type="hidden" name="extra_cost_inr" value="{{ result.extra_cost_inr }}">
+            <input type="hidden" name="verdict_title" value="{{ result.verdict_title }}">
+            <input type="hidden" name="verdict_level" value="{{ result.verdict_level }}">
+            <button type="submit" class="acct-btn acct-btn-save">
+                <span aria-hidden="true">🔖</span> Save This Decision
+            </button>
+        </form>
+    </div>
+    {% endif %}
 </div>
 {% endif %}
 

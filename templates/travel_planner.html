@@ -163,6 +163,32 @@
            href="{{ url_for('decision_assistant', direction='buy', currency=cur, amount=plan.suggested_inr|round|int) }}">
             Got a quote? Check it with the Decision Assistant</a>
     </div>
+
+    {% if session.get('user_id') %}
+    <div class="acct-save-result-block">
+        <form method="post" action="/my-travel-plans/save">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="destination" value="{{ values.destination }}">
+            <input type="hidden" name="destination_label" value="{{ context.destination_label }}">
+            <input type="hidden" name="currency" value="{{ plan.currency }}">
+            <input type="hidden" name="plan_by" value="{{ values.plan_by }}">
+            <input type="hidden" name="days" value="{{ plan.days }}">
+            <input type="hidden" name="buffer_pct" value="{{ plan.buffer_pct }}">
+            <input type="hidden" name="suggested_inr" value="{{ plan.suggested_inr }}">
+            <input type="hidden" name="suggested_foreign" value="{{ plan.suggested_foreign }}">
+            <input type="hidden" name="rate" value="{{ plan.rate }}">
+            <input type="hidden" name="travel_date" value="{{ values.travel_date }}">
+            {% if values.plan_by == 'daily' %}
+            <input type="hidden" name="daily_spend" value="{{ values.daily_spend }}">
+            {% else %}
+            <input type="hidden" name="total_budget" value="{{ values.total_budget }}">
+            {% endif %}
+            <button type="submit" class="acct-btn acct-btn-save">
+                <span aria-hidden="true">🔖</span> Save This Travel Plan
+            </button>
+        </form>
+    </div>
+    {% endif %}
 </div>
 {% endif %}
 

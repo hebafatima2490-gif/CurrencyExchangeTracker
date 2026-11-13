@@ -56,6 +56,47 @@ def create_database():
         )
     """)
 
+    # User preferences table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS user_preferences (
+            user_id INTEGER PRIMARY KEY,
+            default_currency TEXT NOT NULL DEFAULT 'USD',
+            watchlist TEXT DEFAULT '',
+            FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+    """)
+
+    # Rate alerts table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS rate_alerts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            currency TEXT NOT NULL,
+            direction TEXT NOT NULL,
+            target_rate REAL NOT NULL,
+            created_at TEXT NOT NULL,
+            triggered_at TEXT,
+            triggered_rate REAL,
+            triggered_rate_date TEXT,
+            acknowledged INTEGER DEFAULT 0,
+            FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+    """)
+
+    # Saved items table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS saved_items (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            kind TEXT NOT NULL,
+            title TEXT NOT NULL,
+            summary TEXT NOT NULL,
+            params TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+    """)
+
     connection.commit()
     connection.close()
 
@@ -547,3 +588,344 @@ def get_latest_rate_with_date(base_currency, target_currency):
     result = cursor.fetchone()
     connection.close()
     return (result[0], result[1]) if result else None
+
+
+# ==========================================
+# Account Management Functions
+# ==========================================
+
+def get_user_by_id(user_id):
+    """Retrieve user record by id: (id, username, created_at)."""
+    connection = sqlite3.connect(DATABASE_NAME)
+    cursor = connection.cursor()
+    cursor.execute("SELECT id, username, created_at FROM users WHERE id = ?", (user_id,))
+    row = cursor.fetchone()
+    connection.close()
+    return row
+
+
+def get_user_preferences(user_id):
+    """Retrieve user preferences dict with default_currency and watchlist list."""
+    connection = sqlite3.connect(DATABASE_NAME)
+    cursor = connection.cursor()
+    cursor.execute("""
+        SELECT default_currency, watchlist
+        FROM user_preferences
+        WHERE user_id = ?
+    """, (user_id,))
+    row = cursor.fetchone()
+    connection.close()
+    if row:
+        raw_watchlist = row[1] or ""
+        watchlist = [c.strip().upper() for c in raw_watchlist.split(",") if c.strip()]
+        return {
+            "default_currency": row[0],
+            "watchlist": watchlist
+        }
+    return {
+        "default_currency": "USD",
+        "watchlist": []
+    }
+
+
+def save_user_preferences(user_id, default_currency=None, watchlist=None):
+    """Save or update user preferences."""
+    connection = sqlite3.connect(DATABASE_NAME)
+    cursor = connection.cursor()
+    
+    current = get_user_preferences(user_id)
+    new_default = default_currency if default_currency is not None else current["default_currency"]
+    new_watchlist = watchlist if watchlist is not None else current["watchlist"]
+    
+    watchlist_str = ",".join(new_watchlist) if isinstance(new_watchlist, (list, tuple)) else str(new_watchlist)
+    
+    cursor.execute("""
+        INSERT INTO user_preferences (user_id, default_currency, watchlist)
+        VALUES (?, ?, ?)
+        ON CONFLICT(user_id) DO UPDATE SET
+            default_currency = excluded.default_currency,
+            watchlist = excluded.watchlist
+    """, (user_id, new_default, watchlist_str))
+    
+    connection.commit()
+    connection.close()
+    return True
+
+
+def get_rate_alerts(user_id):
+    """Retrieve all rate alerts for a user."""
+    connection = sqlite3.connect(DATABASE_NAME)
+    cursor = connection.cursor()
+    cursor.execute("""
+        SELECT id, user_id, currency, direction, target_rate, created_at,
+               triggered_at, triggered_rate, triggered_rate_date, acknowledged
+        FROM rate_alerts
+        WHERE user_id = ?
+        ORDER BY created_at DESC
+    """, (user_id,))
+    rows = cursor.fetchall()
+    connection.close()
+    
+    alerts = []
+    for r in rows:
+        alerts.append({
+            "id": r[0],
+            "user_id": r[1],
+            "currency": r[2],
+            "direction": r[3],
+            "target_rate": r[4],
+            "created_at": r[5],
+            "triggered_at": r[6],
+            "triggered_rate": r[7],
+            "triggered_rate_date": r[8],
+            "acknowledged": bool(r[9])
+        })
+    return alerts
+
+
+def count_rate_alerts(user_id):
+    """Return count of active/stored alerts for a user."""
+    connection = sqlite3.connect(DATABASE_NAME)
+    cursor = connection.cursor()
+    cursor.execute("SELECT COUNT(*) FROM rate_alerts WHERE user_id = ?", (user_id,))
+    count = cursor.fetchone()[0]
+    connection.close()
+    return count
+
+
+def add_rate_alert(user_id, currency, direction, target_rate):
+    """Create a new rate alert if user has < 20 alerts."""
+    if count_rate_alerts(user_id) >= 20:
+        return False, "Maximum limit of 20 rate alerts reached."
+        
+    connection = sqlite3.connect(DATABASE_NAME)
+    cursor = connection.cursor()
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    cursor.execute("""
+        INSERT INTO rate_alerts
+        (user_id, currency, direction, target_rate, created_at, acknowledged)
+        VALUES (?, ?, ?, ?, ?, 0)
+    """, (user_id, currency.upper(), direction.lower(), float(target_rate), now_str))
+    connection.commit()
+    connection.close()
+    return True, None
+
+
+def delete_rate_alert(user_id, alert_id):
+    """Delete an alert owned by user_id."""
+    connection = sqlite3.connect(DATABASE_NAME)
+    cursor = connection.cursor()
+    cursor.execute("""
+        DELETE FROM rate_alerts
+        WHERE id = ? AND user_id = ?
+    """, (alert_id, user_id))
+    affected = cursor.rowcount
+    connection.commit()
+    connection.close()
+    return affected > 0
+
+
+def dismiss_rate_alert(user_id, alert_id):
+    """Acknowledge (dismiss) a triggered rate alert."""
+    connection = sqlite3.connect(DATABASE_NAME)
+    cursor = connection.cursor()
+    cursor.execute("""
+        UPDATE rate_alerts
+        SET acknowledged = 1
+        WHERE id = ? AND user_id = ?
+    """, (alert_id, user_id))
+    affected = cursor.rowcount
+    connection.commit()
+    connection.close()
+    return affected > 0
+
+
+def rearm_rate_alert(user_id, alert_id):
+    """Re-arm an alert by resetting triggered fields and acknowledgement."""
+    connection = sqlite3.connect(DATABASE_NAME)
+    cursor = connection.cursor()
+    cursor.execute("""
+        UPDATE rate_alerts
+        SET triggered_at = NULL,
+            triggered_rate = NULL,
+            triggered_rate_date = NULL,
+            acknowledged = 0
+        WHERE id = ? AND user_id = ?
+    """, (alert_id, user_id))
+    affected = cursor.rowcount
+    connection.commit()
+    connection.close()
+    return affected > 0
+
+
+def check_user_alerts(user_id):
+    """
+    Check active unacknowledged alerts against newest stored exchange rates.
+    Updates triggered_at, triggered_rate, triggered_rate_date when criteria met.
+    Returns list of triggered alerts for this user.
+    """
+    alerts = get_rate_alerts(user_id)
+    triggered_alerts = []
+    
+    connection = sqlite3.connect(DATABASE_NAME)
+    cursor = connection.cursor()
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    for alert in alerts:
+        # Check against newest rate in database
+        rate_info = get_latest_rate_with_date(alert["currency"], "INR")
+        if not rate_info:
+            continue
+        rate, rate_date = rate_info
+        
+        # Check if already triggered
+        if alert["triggered_at"]:
+            if not alert["acknowledged"]:
+                triggered_alerts.append(alert)
+            continue
+            
+        condition_met = False
+        if alert["direction"] == "above" and rate >= alert["target_rate"]:
+            condition_met = True
+        elif alert["direction"] == "below" and rate <= alert["target_rate"]:
+            condition_met = True
+            
+        if condition_met:
+            cursor.execute("""
+                UPDATE rate_alerts
+                SET triggered_at = ?,
+                    triggered_rate = ?,
+                    triggered_rate_date = ?
+                WHERE id = ?
+            """, (now_str, rate, rate_date, alert["id"]))
+            alert["triggered_at"] = now_str
+            alert["triggered_rate"] = rate
+            alert["triggered_rate_date"] = rate_date
+            triggered_alerts.append(alert)
+            
+    connection.commit()
+    connection.close()
+    return triggered_alerts
+
+
+def count_saved_items(user_id, kind=None):
+    """Return count of saved items for a user, optionally filtered by kind."""
+    connection = sqlite3.connect(DATABASE_NAME)
+    cursor = connection.cursor()
+    if kind:
+        cursor.execute("SELECT COUNT(*) FROM saved_items WHERE user_id = ? AND kind = ?", (user_id, kind))
+    else:
+        cursor.execute("SELECT COUNT(*) FROM saved_items WHERE user_id = ?", (user_id,))
+    count = cursor.fetchone()[0]
+    connection.close()
+    return count
+
+
+def get_saved_items(user_id, kind=None):
+    """Retrieve saved items for a user."""
+    connection = sqlite3.connect(DATABASE_NAME)
+    cursor = connection.cursor()
+    if kind:
+        cursor.execute("""
+            SELECT id, user_id, kind, title, summary, params, created_at
+            FROM saved_items
+            WHERE user_id = ? AND kind = ?
+            ORDER BY created_at DESC
+        """, (user_id, kind))
+    else:
+        cursor.execute("""
+            SELECT id, user_id, kind, title, summary, params, created_at
+            FROM saved_items
+            WHERE user_id = ?
+            ORDER BY created_at DESC
+        """, (user_id,))
+    rows = cursor.fetchall()
+    connection.close()
+    
+    items = []
+    for r in rows:
+        items.append({
+            "id": r[0],
+            "user_id": r[1],
+            "kind": r[2],
+            "title": r[3],
+            "summary": r[4],
+            "params": r[5],
+            "created_at": r[6]
+        })
+    return items
+
+
+def get_saved_item(user_id, item_id):
+    """Retrieve single saved item verified by user_id."""
+    connection = sqlite3.connect(DATABASE_NAME)
+    cursor = connection.cursor()
+    cursor.execute("""
+        SELECT id, user_id, kind, title, summary, params, created_at
+        FROM saved_items
+        WHERE id = ? AND user_id = ?
+    """, (item_id, user_id))
+    r = cursor.fetchone()
+    connection.close()
+    if r:
+        return {
+            "id": r[0],
+            "user_id": r[1],
+            "kind": r[2],
+            "title": r[3],
+            "summary": r[4],
+            "params": r[5],
+            "created_at": r[6]
+        }
+    return None
+
+
+def add_saved_item(user_id, kind, title, summary, params_json):
+    """Add a saved item up to 100 limit."""
+    if count_saved_items(user_id) >= 100:
+        return False, "Maximum limit of 100 saved items reached."
+        
+    connection = sqlite3.connect(DATABASE_NAME)
+    cursor = connection.cursor()
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    cursor.execute("""
+        INSERT INTO saved_items
+        (user_id, kind, title, summary, params, created_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (user_id, kind, title, summary, params_json, now_str))
+    connection.commit()
+    connection.close()
+    return True, None
+
+
+def delete_saved_item(user_id, item_id):
+    """Delete a saved item owned by user_id."""
+    connection = sqlite3.connect(DATABASE_NAME)
+    cursor = connection.cursor()
+    cursor.execute("""
+        DELETE FROM saved_items
+        WHERE id = ? AND user_id = ?
+    """, (item_id, user_id))
+    affected = cursor.rowcount
+    connection.commit()
+    connection.close()
+    return affected > 0
+
+
+def delete_entire_user_account(user_id):
+    """
+    Explicitly delete user preferences, rate alerts, saved items, and user record.
+    Does not rely on ON DELETE CASCADE.
+    """
+    connection = sqlite3.connect(DATABASE_NAME)
+    cursor = connection.cursor()
+    
+    cursor.execute("DELETE FROM user_preferences WHERE user_id = ?", (user_id,))
+    cursor.execute("DELETE FROM rate_alerts WHERE user_id = ?", (user_id,))
+    cursor.execute("DELETE FROM saved_items WHERE user_id = ?", (user_id,))
+    cursor.execute("DELETE FROM users WHERE id = ?", (user_id,))
+    
+    connection.commit()
+    connection.close()
+    return True
+

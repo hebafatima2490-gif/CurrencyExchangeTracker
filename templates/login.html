@@ -18,6 +18,8 @@
     {% endwith %}
 
     <form method="post" action="{{ url_for('login') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% if next_url %}
+        <input type="hidden" name="next" value="{{ next_url }}">{% endif %}
         <div class="form-group">
             <label for="username">Username</label>
             <input type="text" id="username" name="username" autocomplete="username" required>

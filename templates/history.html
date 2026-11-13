@@ -330,7 +330,7 @@
 
             <div class="filter-actions">
                 <button type="submit" class="btn-primary">Filter</button>
-                {% if start_date or end_date %}
+                {% if is_custom_filter %}
                 <a href="/history?currency={{ selected_currency }}" class="btn-reset">Reset</a>
                 {% endif %}
             </div>
@@ -340,10 +340,10 @@
             <span style="font-size: 0.8125rem; font-weight: 600; color: var(--text-muted); margin-right: 4px;">
                 Quick Range:
             </span>
-            <button type="button" class="preset-btn" onclick="applyQuickRange('7d')">Last 7 Days</button>
-            <button type="button" class="preset-btn" onclick="applyQuickRange('30d')">Last 30 Days</button>
-            <button type="button" class="preset-btn" onclick="applyQuickRange('60d')">Last 60 Days</button>
-            <button type="button" class="preset-btn" onclick="applyQuickRange('all')">All Records</button>
+            <button type="button" class="preset-btn{% if active_range == '7d' %} active{% endif %}" onclick="applyQuickRange('7d')">Last 7 Days</button>
+            <button type="button" class="preset-btn{% if active_range == '30d' %} active{% endif %}" onclick="applyQuickRange('30d')">Last 30 Days</button>
+            <button type="button" class="preset-btn{% if active_range == '60d' %} active{% endif %}" onclick="applyQuickRange('60d')">Last 60 Days</button>
+            <button type="button" class="preset-btn{% if active_range == 'all' %} active{% endif %}" onclick="applyQuickRange('all')">All Records</button>
         </div>
     </form>
 </div>
@@ -1006,6 +1006,13 @@
     }
 
     function applyQuickRange(range) {
+        document.querySelectorAll(".preset-btn").forEach(btn => {
+            if (btn.getAttribute("onclick") === "applyQuickRange('" + range + "')") {
+                btn.classList.add("active");
+            } else {
+                btn.classList.remove("active");
+            }
+        });
         const currency = document.getElementById("currency").value;
         fetch("/api/dynamic-daily?currency=" + encodeURIComponent(currency) + "&range=" + range)
             .then(r => r.json())

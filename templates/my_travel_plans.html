@@ -1,0 +1,95 @@
+{% extends "account_base.html" %}
+
+{% block title %}My Travel Plans – Currency Exchange Tracker{% endblock %}
+
+{% block account_content %}
+<div class="acct-currencies-page">
+    <!-- Header -->
+    <header class="acct-welcome-header">
+        <div class="acct-welcome-info">
+            <h1 class="acct-welcome-title">My Travel Plans</h1>
+            <p class="acct-member-since">Your saved travel money estimates. Snapshot rates are preserved at the time of saving.</p>
+        </div>
+        <div class="acct-welcome-actions">
+            <a href="/travel-planner" class="acct-action-btn">
+                <span aria-hidden="true">+</span> New Travel Plan
+            </a>
+            <a href="/dashboard" class="acct-action-btn acct-action-btn-secondary">
+                <span aria-hidden="true">←</span> Back to Dashboard
+            </a>
+        </div>
+    </header>
+
+    <section class="acct-section acct-saved-section" aria-labelledby="plansHeading">
+        <div class="acct-section-header">
+            <h2 id="plansHeading" class="acct-section-title">
+                <span class="acct-section-icon" aria-hidden="true">✈️</span>
+                Saved Travel Plans
+                <span class="acct-count-badge">{{ items|length }} saved · {{ total_saved }}/{{ saved_max }} total</span>
+            </h2>
+        </div>
+
+        {% if items %}
+        <div class="acct-saved-cards-grid">
+            {% for item in items %}
+            {% set p = item.parsed_params %}
+            <div class="acct-card acct-saved-plan-card">
+                <div class="acct-saved-plan-header">
+                    <span class="acct-currency-badge">{{ p.get('currency', '?') }}</span>
+                    <span class="acct-saved-plan-title">{{ item.title }}</span>
+                </div>
+                <div class="acct-saved-plan-stats">
+                    <div class="acct-saved-stat">
+                        <span class="acct-saved-stat-label">Suggested Budget</span>
+                        <span class="acct-saved-stat-value">₹{{ "{:,.0f}".format(p.get('suggested_inr', 0)) }}</span>
+                    </div>
+                    <div class="acct-saved-stat">
+                        <span class="acct-saved-stat-label">Foreign Amount</span>
+                        <span class="acct-saved-stat-value">{{ "%.2f"|format(p.get('suggested_foreign', 0)) }} {{ p.get('currency', '') }}</span>
+                    </div>
+                    <div class="acct-saved-stat">
+                        <span class="acct-saved-stat-label">Rate at Saving</span>
+                        <span class="acct-saved-stat-value acct-mono">₹{{ "%.4f"|format(p.get('rate', 0)) }}</span>
+                    </div>
+                    <div class="acct-saved-stat">
+                        <span class="acct-saved-stat-label">Buffer</span>
+                        <span class="acct-saved-stat-value">{{ p.get('buffer_pct', 0)|round(0)|int }}%</span>
+                    </div>
+                    {% if p.get('travel_date') %}
+                    <div class="acct-saved-stat">
+                        <span class="acct-saved-stat-label">Travel Date</span>
+                        <span class="acct-saved-stat-value">{{ p.get('travel_date') }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                <p class="acct-saved-note">Saved {{ item.created_at[:10] }} — rates may have changed since.</p>
+                <div class="acct-actions-btn-group">
+                    <a href="{{ item.reopen_url }}" class="acct-btn acct-btn-sm acct-btn-outline">
+                        Re-open Form
+                    </a>
+                    <form method="post" action="/my-travel-plans/{{ item.id }}/delete">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="acct-btn acct-btn-sm acct-btn-danger"
+                                onclick="return confirm('Delete this saved travel plan?')">Delete</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="acct-card">
+            <div class="acct-empty-alerts">
+                <p class="acct-empty-text">
+                    You have no saved travel plans yet. After planning a trip, logged-in users see a
+                    <strong>Save This Travel Plan</strong> button on the result page.
+                </p>
+                <a href="/travel-planner" class="acct-btn acct-btn-primary" style="margin-top: var(--acct-sp-3);">
+                    Go to Travel Planner
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}
+

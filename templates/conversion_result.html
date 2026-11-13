@@ -78,6 +78,23 @@
                 &larr; Back to Dashboard
             </a>
         </div>
+
+        {% if session.get('user_id') %}
+        <div class="acct-save-result-block">
+            <form method="post" action="/my-conversions/save">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="from_currency" value="{{ from_currency }}">
+                <input type="hidden" name="to_currency" value="{{ to_currency }}">
+                <input type="hidden" name="amount" value="{{ amount }}">
+                <input type="hidden" name="converted_amount" value="{{ converted_amount }}">
+                <input type="hidden" name="rate" value="{{ rate }}">
+                <input type="hidden" name="rupee_status" value="{{ rupee_status }}">
+                <button type="submit" class="acct-btn acct-btn-save">
+                    <span aria-hidden="true">🔖</span> Save This Conversion
+                </button>
+            </form>
+        </div>
+        {% endif %}
     </article>
 </div>
 {% endblock %}

@@ -9,6 +9,7 @@ from api import (
     get_historical_rates,
     fetch_and_cache_year_history
 )
+import database
 from database import (
     DATABASE_NAME,
     create_database,
@@ -27,8 +28,21 @@ from database import (
 )
 from datetime import datetime, timedelta, date
 import forex_tools
+from account import (
+    account_bp,
+    generate_csrf_token,
+    verify_csrf_token,
+    is_safe_redirect_url,
+    validate_password_strength
+)
 
 app = Flask(__name__)
+
+# Register Account Blueprint
+app.register_blueprint(account_bp)
+
+# Configure Jinja global for CSRF token
+app.jinja_env.globals["csrf_token"] = generate_csrf_token
 
 # Configure Secret Key:
 # In production, require FLASK_SECRET_KEY and strictly forbid hardcoded defaults.
@@ -38,6 +52,12 @@ IS_PRODUCTION = (
     or os.environ.get("ENV") == "production"
     or os.environ.get("ENVIRONMENT") == "production"
 )
+
+# Configure Session Security
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+if IS_PRODUCTION:
+    app.config["SESSION_COOKIE_SECURE"] = True
 
 secret_key = os.environ.get("FLASK_SECRET_KEY") or os.environ.get("SECRET_KEY")
 
@@ -284,11 +304,18 @@ def compute_daily_trends(daily_records):
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
+        verify_csrf_token()
         username = request.form.get('username', '').strip()
-        password = request.form.get('password', '').strip()
+        password = request.form.get('password', '')
         if not username or not password:
             flash('Username and password are required.', 'error')
             return render_template('register.html')
+        
+        is_valid_pw, pw_err = validate_password_strength(password)
+        if not is_valid_pw:
+            flash(pw_err, 'error')
+            return render_template('register.html')
+
         # Check duplicate username
         conn = sqlite3.connect(DATABASE_NAME)
         cur = conn.cursor()
@@ -309,21 +336,29 @@ def register():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    raw_next = request.values.get('next', '').strip()
+    next_url = raw_next if (raw_next and is_safe_redirect_url(raw_next)) else None
+
     if request.method == 'POST':
+        verify_csrf_token()
         username = request.form.get('username', '').strip()
-        password = request.form.get('password', '').strip()
+        password = request.form.get('password', '')
         conn = sqlite3.connect(DATABASE_NAME)
         cur = conn.cursor()
         cur.execute('SELECT id, password_hash FROM users WHERE username = ?', (username,))
         row = cur.fetchone()
         conn.close()
         if row and check_password_hash(row[1], password):
+            session.clear()
             session['user_id'] = row[0]
             session['username'] = username
             flash('Logged in successfully.', 'success')
+            
+            if next_url:
+                return redirect(next_url)
             return redirect(url_for('home'))
         flash('Invalid credentials.', 'error')
-    return render_template('login.html')
+    return render_template('login.html', next_url=next_url)
 
 @app.route('/logout')
 def logout():
@@ -436,27 +471,71 @@ def history():
     except ValueError:
         selected_year = current_max_year
 
-    start_date = request.args.get("start_date", "").strip()
-    end_date = request.args.get("end_date", "").strip()
+    raw_start = request.args.get("start_date", "").strip()
+    raw_end = request.args.get("end_date", "").strip()
+    range_preset = request.args.get("range", "").strip().lower()
     date_error = None
 
     valid_start = None
     valid_end = None
 
-    if start_date:
+    if raw_start:
         try:
-            valid_start = datetime.strptime(start_date, "%Y-%m-%d").date()
+            valid_start = datetime.strptime(raw_start, "%Y-%m-%d").date()
         except ValueError:
             date_error = "Invalid start date format. Please use YYYY-MM-DD."
 
-    if end_date and not date_error:
+    if raw_end and not date_error:
         try:
-            valid_end = datetime.strptime(end_date, "%Y-%m-%d").date()
+            valid_end = datetime.strptime(raw_end, "%Y-%m-%d").date()
         except ValueError:
             date_error = "Invalid end date format. Please use YYYY-MM-DD."
 
     if valid_start and valid_end and valid_start > valid_end:
         date_error = "Start date cannot be after end date."
+
+    today = datetime.now().date()
+    query_start = None
+    query_end = None
+    active_range = None
+    is_custom_filter = False
+
+    if raw_start or raw_end:
+        # Custom date range takes explicit precedence
+        is_custom_filter = True
+        query_start = raw_start if raw_start else None
+        query_end = raw_end if raw_end else None
+        start_date = raw_start
+        end_date = raw_end
+    elif range_preset == "all":
+        # All historical records
+        active_range = "all"
+        query_start = None
+        query_end = None
+        start_date = ""
+        end_date = ""
+    elif range_preset == "7d":
+        active_range = "7d"
+        calc_start = (today - timedelta(days=7)).strftime("%Y-%m-%d")
+        query_start = calc_start
+        query_end = None
+        start_date = calc_start
+        end_date = today.strftime("%Y-%m-%d")
+    elif range_preset == "60d":
+        active_range = "60d"
+        calc_start = (today - timedelta(days=60)).strftime("%Y-%m-%d")
+        query_start = calc_start
+        query_end = None
+        start_date = calc_start
+        end_date = today.strftime("%Y-%m-%d")
+    else:
+        # Default on initial load or range=30d: Last 30 Days
+        active_range = "30d"
+        calc_start = (today - timedelta(days=30)).strftime("%Y-%m-%d")
+        query_start = calc_start
+        query_end = None
+        start_date = calc_start
+        end_date = today.strftime("%Y-%m-%d")
 
     # Graph 1: Daily History Data
     if date_error:
@@ -465,8 +544,8 @@ def history():
         history_data = get_history(
             currency,
             "INR",
-            start_date=start_date if start_date else None,
-            end_date=end_date if end_date else None
+            start_date=query_start,
+            end_date=query_end
         )
 
     min_date, max_date = get_date_bounds(currency, "INR")
@@ -492,7 +571,9 @@ def history():
         max_date=max_date,
         selected_year=selected_year,
         years=get_allowed_years(),
-        monthly_data=monthly_data
+        monthly_data=monthly_data,
+        active_range=active_range,
+        is_custom_filter=is_custom_filter
     )
 
 
@@ -660,6 +741,16 @@ def decision_assistant():
         values["currency"] = "USD"
     if values["quote_unit"] not in ("1", "100"):
         values["quote_unit"] = "1"
+
+    # For authenticated users on a fresh GET (no explicit ?currency= param), apply
+    # their saved default currency. Explicit params (reopen URLs) always take priority.
+    if (request.method == "GET"
+            and not request.args.get("currency")
+            and session.get("user_id")):
+        prefs = database.get_user_preferences(session["user_id"])
+        pref_currency = prefs.get("default_currency", "USD")
+        if pref_currency in forex_tools.SUPPORTED_CURRENCIES:
+            values["currency"] = pref_currency
 
     result = None
     reference = None
@@ -905,7 +996,40 @@ def convert():
 
 @app.route("/converter")
 def converter():
-    return render_template("converter.html")
+    supported = ALLOWED_CURRENCIES + ["INR"]  # ["USD","EUR","GBP","JPY","AED","INR"]
+
+    # --- From currency: explicit param > saved preference > "USD" ---
+    raw_from = request.args.get("from_currency", "").strip().upper()
+    if raw_from in supported:
+        default_from = raw_from                        # reopen / explicit param wins
+    elif session.get("user_id"):
+        prefs = database.get_user_preferences(session["user_id"])
+        pref = prefs.get("default_currency", "USD")
+        default_from = pref if pref in ALLOWED_CURRENCIES else "USD"
+    else:
+        default_from = "USD"                           # guest fallback
+
+    # --- To currency: explicit param > "INR" ---
+    raw_to = request.args.get("to_currency", "").strip().upper()
+    default_to = raw_to if raw_to in supported else "INR"
+
+    # --- Amount: explicit param if valid positive finite number ---
+    raw_amount = request.args.get("amount", "").strip()
+    default_amount = "100"
+    if raw_amount:
+        try:
+            parsed_amt = float(raw_amount)
+            if parsed_amt > 0 and math.isfinite(parsed_amt):
+                default_amount = raw_amount
+        except (ValueError, TypeError):
+            pass
+
+    return render_template(
+        "converter.html",
+        default_from=default_from,
+        default_to=default_to,
+        default_amount=default_amount,
+    )
 
 
 @app.route("/about")

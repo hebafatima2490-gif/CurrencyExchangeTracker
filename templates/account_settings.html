@@ -1,0 +1,113 @@
+{% extends "account_base.html" %}
+
+{% block title %}Account Settings – Currency Exchange Tracker{% endblock %}
+
+{% block account_content %}
+<div class="acct-settings-page">
+    <header class="acct-welcome-header">
+        <div class="acct-welcome-info">
+            <h1 class="acct-welcome-title">Account Settings</h1>
+            <p class="acct-member-since">Manage your account profile, security credentials, and preferences.</p>
+        </div>
+        <div class="acct-welcome-actions">
+            <a href="/dashboard" class="acct-action-btn acct-action-btn-secondary">
+                <span aria-hidden="true">←</span> Back to Dashboard
+            </a>
+        </div>
+    </header>
+
+    <div class="acct-cards-grid" style="grid-template-columns: 1fr; max-width: 720px; gap: var(--acct-sp-6);">
+        <!-- Profile Information Card -->
+        <div class="acct-card">
+            <h2 class="acct-card-title">
+                <span class="acct-card-icon" aria-hidden="true">👤</span>
+                Profile Information
+            </h2>
+            <p class="acct-card-subtitle">Your personal account identification details.</p>
+
+            <div class="acct-profile-details" style="margin-top: var(--acct-sp-4);">
+                <div style="display: flex; justify-content: space-between; padding: var(--acct-sp-3) 0; border-bottom: 1px solid var(--acct-border);">
+                    <strong style="color: var(--acct-text-primary);">Username</strong>
+                    <span class="acct-mono" style="color: var(--acct-text-secondary); font-size: 1rem;">{{ username }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: var(--acct-sp-3) 0;">
+                    <strong style="color: var(--acct-text-primary);">Member Since</strong>
+                    <span class="acct-mono" style="color: var(--acct-text-secondary); font-size: 1rem;">{{ join_date }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Change Password Card -->
+        <div class="acct-card">
+            <h2 class="acct-card-title">
+                <span class="acct-card-icon" aria-hidden="true">🔒</span>
+                Change Password
+            </h2>
+            <p class="acct-card-subtitle">Update your login password. Passwords must be 8–128 characters.</p>
+
+            <form method="post" action="/account/password" style="margin-top: var(--acct-sp-4);">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="acct-form-group" style="margin-bottom: var(--acct-sp-4);">
+                    <label for="current_password" style="display: block; font-weight: 600; margin-bottom: 6px; color: var(--acct-text-primary);">Current Password</label>
+                    <input type="password" id="current_password" name="current_password" required autocomplete="current-password"
+                           style="width: 100%; padding: 10px 12px; border: 1px solid var(--acct-border); border-radius: var(--acct-radius-sm); font-size: 1rem;">
+                </div>
+
+                <div class="acct-form-group" style="margin-bottom: var(--acct-sp-4);">
+                    <label for="new_password" style="display: block; font-weight: 600; margin-bottom: 6px; color: var(--acct-text-primary);">New Password</label>
+                    <input type="password" id="new_password" name="new_password" required autocomplete="new-password" minlength="8" maxlength="128"
+                           style="width: 100%; padding: 10px 12px; border: 1px solid var(--acct-border); border-radius: var(--acct-radius-sm); font-size: 1rem;">
+                    <span class="acct-field-note" style="display: block; font-size: 0.8125rem; color: var(--acct-text-muted); margin-top: 4px;">Minimum 8 characters, maximum 128 characters.</span>
+                </div>
+
+                <div class="acct-form-group" style="margin-bottom: var(--acct-sp-5);">
+                    <label for="confirm_password" style="display: block; font-weight: 600; margin-bottom: 6px; color: var(--acct-text-primary);">Confirm New Password</label>
+                    <input type="password" id="confirm_password" name="confirm_password" required autocomplete="new-password" minlength="8" maxlength="128"
+                           style="width: 100%; padding: 10px 12px; border: 1px solid var(--acct-border); border-radius: var(--acct-radius-sm); font-size: 1rem;">
+                </div>
+
+                <button type="submit" class="acct-btn acct-btn-primary">
+                    Update Password
+                </button>
+            </form>
+        </div>
+
+        <!-- Danger Zone (Delete Account) Card -->
+        <div class="acct-card" style="border: 1px solid #fecaca; background: #fff5f5;">
+            <h2 class="acct-card-title" style="color: #b91c1c;">
+                <span class="acct-card-icon" aria-hidden="true">⚠️</span>
+                Danger Zone: Delete Account
+            </h2>
+            <p class="acct-card-subtitle" style="color: #7f1d1d;">
+                Permanently delete your account, default currency settings, watchlist, rate alerts, and all saved conversions, travel plans, and decisions. This action cannot be undone.
+            </p>
+
+            <form method="post" action="/account/delete" style="margin-top: var(--acct-sp-4);">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="acct-form-group" style="margin-bottom: var(--acct-sp-4);">
+                    <label for="del_current_password" style="display: block; font-weight: 600; margin-bottom: 6px; color: #7f1d1d;">Current Password</label>
+                    <input type="password" id="del_current_password" name="current_password" required autocomplete="current-password"
+                           placeholder="Enter your current password"
+                           style="width: 100%; padding: 10px 12px; border: 1px solid #fca5a5; border-radius: var(--acct-radius-sm); font-size: 1rem; background: #fff;">
+                </div>
+
+                <div class="acct-form-group" style="margin-bottom: var(--acct-sp-5);">
+                    <label for="confirm_phrase" style="display: block; font-weight: 600; margin-bottom: 6px; color: #7f1d1d;">
+                        Type <strong>DELETE</strong> in all caps to confirm
+                    </label>
+                    <input type="text" id="confirm_phrase" name="confirm_phrase" required autocomplete="off"
+                           placeholder="DELETE"
+                           style="width: 100%; padding: 10px 12px; border: 1px solid #fca5a5; border-radius: var(--acct-radius-sm); font-size: 1rem; background: #fff;">
+                </div>
+
+                <button type="submit" class="acct-btn acct-btn-danger" onclick="return confirm('Are you completely sure you want to permanently delete your account? All saved data will be lost.');">
+                    Permanently Delete Account
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

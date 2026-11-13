@@ -11,10 +11,10 @@
     {% block head %}{% endblock %}
 </head>
 
-<body>
+<body{% if session.get('user_id') %} class="acct-logged-in"{% endif %}>
     <!-- Accessibility Skip Link -->
     <a href="#main-content" class="skip-link">Skip to main content</a>
-
+{% if session.get('user_id') %}{% include "_account_header.html" %}{% else %}
     <!-- Global Application Header -->
     <header class="site-header">
         <div class="container header-inner">
@@ -48,7 +48,7 @@
                 {% endif %}
             </nav>
         </div>
-    </header>
+    </header>{% endif %}
 
     {% block hero %}{% endblock %}
 
@@ -115,7 +115,8 @@
     </footer>
 
     <!-- Main Scripts -->
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>{% if session.get('user_id') %}
+    <script src="{{ url_for('static', filename='js/acct_nav.js') }}"></script>{% endif %}
     {% block scripts %}{% endblock %}
 </body>
 

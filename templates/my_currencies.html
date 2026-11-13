@@ -1,0 +1,228 @@
+{% extends "account_base.html" %}
+
+{% block title %}My Currencies & Rate Alerts – Currency Exchange Tracker{% endblock %}
+
+{% block account_content %}
+<div class="acct-currencies-page">
+    <!-- Header -->
+    <header class="acct-welcome-header">
+        <div class="acct-welcome-info">
+            <h1 class="acct-welcome-title">My Currencies &amp; Rate Alerts</h1>
+            <p class="acct-member-since">Manage your preferred default currency, active watchlist, and rate threshold alerts.</p>
+        </div>
+        <div class="acct-welcome-actions">
+            <a href="/dashboard" class="acct-action-btn">
+                <span aria-hidden="true">←</span> Back to Dashboard
+            </a>
+        </div>
+    </header>
+
+    <!-- SECTION A: Default Currency -->
+    <section class="acct-section acct-default-curr-section" aria-labelledby="defaultCurrHeading">
+        <div class="acct-section-header">
+            <h2 id="defaultCurrHeading" class="acct-section-title">
+                <span class="acct-section-icon" aria-hidden="true">⚙️</span> Default Currency
+            </h2>
+        </div>
+        <div class="acct-card acct-pref-card">
+            <p class="acct-pref-description">
+                Your selected default currency is your primary source currency preference across the application.
+            </p>
+            <form method="post" action="/my-currencies/default" class="acct-inline-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="acct-form-group">
+                    <label for="default_currency" class="acct-label">Primary Currency</label>
+                    <select id="default_currency" name="default_currency" class="acct-select" required>
+                        {% for c in allowed_currencies %}
+                            <option value="{{ c }}" {% if c == default_currency %}selected{% endif %}>{{ c }} — {{ c }} / INR</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="acct-btn acct-btn-primary">Save Default</button>
+            </form>
+        </div>
+    </section>
+
+    <!-- SECTION B: My Watchlist -->
+    <section class="acct-section acct-watchlist-section" aria-labelledby="watchlistHeading">
+        <div class="acct-section-header">
+            <h2 id="watchlistHeading" class="acct-section-title">
+                <span class="acct-section-icon" aria-hidden="true">⭐</span> My Watchlist
+            </h2>
+        </div>
+
+        <!-- Add to Watchlist Form -->
+        <div class="acct-card acct-watchlist-add-card">
+            <form method="post" action="/my-currencies/watchlist/add" class="acct-inline-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="acct-form-group">
+                    <label for="watchlist_currency" class="acct-label">Add Currency to Watchlist</label>
+                    <select id="watchlist_currency" name="currency" class="acct-select" required>
+                        {% for c in allowed_currencies %}
+                            <option value="{{ c }}">{{ c }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="acct-btn acct-btn-primary">+ Add to Watchlist</button>
+            </form>
+        </div>
+
+        <!-- Watchlist Items -->
+        {% if watchlist and watchlist|length > 0 %}
+            <div class="acct-watchlist-grid">
+                {% for item in watchlist %}
+                    <div class="acct-card acct-watchlist-card">
+                        <div class="acct-watchlist-header">
+                            <span class="acct-currency-badge">{{ item.currency }}</span>
+                            <form method="post" action="/my-currencies/watchlist/remove" class="acct-remove-form">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="currency" value="{{ item.currency }}">
+                                <button type="submit" class="acct-btn-icon" aria-label="Remove {{ item.currency }} from watchlist" title="Remove {{ item.currency }}">✕</button>
+                            </form>
+                        </div>
+                        <div class="acct-watchlist-body">
+                            {% if item.rate is not none %}
+                                <div class="acct-rate-value">{{ "%.4f"|format(item.rate) }} <span class="acct-rate-unit">INR</span></div>
+                                <div class="acct-rate-obs">Observed: {{ item.date }}</div>
+                            {% else %}
+                                <div class="acct-rate-value acct-rate-missing">No rate recorded</div>
+                                <div class="acct-rate-obs">Rate observation unavailable</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="acct-empty-alerts">
+                <p class="acct-empty-text">Your watchlist is currently empty. Add currencies above to monitor their latest exchange rates.</p>
+            </div>
+        {% endif %}
+    </section>
+
+    <!-- SECTION C: Rate Alerts -->
+    <section class="acct-section acct-alerts-mgmt-section" aria-labelledby="alertsMgmtHeading">
+        <div class="acct-section-header">
+            <h2 id="alertsMgmtHeading" class="acct-section-title">
+                <span class="acct-section-icon" aria-hidden="true">🔔</span> Rate Alerts ({{ alerts|length }}/20)
+            </h2>
+        </div>
+
+        <div class="acct-card acct-notice-card">
+            <p class="acct-notice-text">
+                <span aria-hidden="true">ℹ️</span> <strong>Note:</strong> Rate alerts are checked when you visit the website. They are not real-time email or push notifications.
+            </p>
+        </div>
+
+        <!-- Create Alert Form -->
+        {% if alerts|length < 20 %}
+            <div class="acct-card acct-alert-form-card">
+                <h3 class="acct-card-subtitle">Create a New Rate Alert</h3>
+                <form method="post" action="/my-currencies/alerts/create" class="acct-alert-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="acct-alert-form-row">
+                        <div class="acct-form-group">
+                            <label for="alert_currency" class="acct-label">Currency</label>
+                            <select id="alert_currency" name="currency" class="acct-select" required>
+                                {% for c in allowed_currencies %}
+                                    <option value="{{ c }}">{{ c }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="acct-form-group">
+                            <label for="alert_direction" class="acct-label">Condition</label>
+                            <select id="alert_direction" name="direction" class="acct-select" required>
+                                <option value="above">Goes above</option>
+                                <option value="below">Goes below</option>
+                            </select>
+                        </div>
+                        <div class="acct-form-group">
+                            <label for="alert_target_rate" class="acct-label">Target Rate (INR)</label>
+                            <input type="number" step="any" id="alert_target_rate" name="target_rate" class="acct-input" placeholder="e.g. 90.50" required>
+                        </div>
+                        <div class="acct-form-group acct-form-submit">
+                            <button type="submit" class="acct-btn acct-btn-primary">Set Alert</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        {% else %}
+            <div class="acct-card acct-limit-card">
+                <p class="acct-limit-text">Maximum limit of 20 rate alerts reached. Delete existing alerts to create new ones.</p>
+            </div>
+        {% endif %}
+
+        <!-- Existing Alerts List -->
+        {% if alerts and alerts|length > 0 %}
+            <div class="acct-alerts-table-wrap">
+                <table class="acct-table">
+                    <thead>
+                        <tr>
+                            <th>Currency</th>
+                            <th>Condition</th>
+                            <th>Target Rate</th>
+                            <th>Created</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for alert in alerts %}
+                            <tr class="acct-alert-row {% if alert.triggered_at and not alert.acknowledged %}acct-row-triggered{% endif %}">
+                                <td><span class="acct-currency-pill">{{ alert.currency }}</span></td>
+                                <td>
+                                    <span class="acct-dir-badge {{ alert.direction }}">{{ alert.direction|upper }}</span>
+                                </td>
+                                <td><strong>{{ "%.4f"|format(alert.target_rate) }} INR</strong></td>
+                                <td class="acct-meta-cell">{{ alert.created_at }}</td>
+                                <td>
+                                    {% if alert.triggered_at and not alert.acknowledged %}
+                                        <span class="acct-status-badge acct-status-triggered">
+                                            🔔 TRIGGERED: {{ "%.4f"|format(alert.triggered_rate) }} INR (Observed: {{ alert.triggered_rate_date or 'Recorded' }})
+                                        </span>
+                                    {% elif alert.acknowledged %}
+                                        <span class="acct-status-badge acct-status-dismissed">
+                                            ✓ Dismissed (Triggered: {{ alert.triggered_at }})
+                                        </span>
+                                    {% else %}
+                                        <span class="acct-status-badge acct-status-active">
+                                            Active (Monitoring)
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="acct-actions-cell">
+                                    <div class="acct-actions-btn-group">
+                                        {% if alert.triggered_at and not alert.acknowledged %}
+                                            <form method="post" action="/my-currencies/alerts/{{ alert.id }}/dismiss">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="acct-btn acct-btn-sm acct-btn-outline">Dismiss</button>
+                                            </form>
+                                            <form method="post" action="/my-currencies/alerts/{{ alert.id }}/rearm">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="acct-btn acct-btn-sm acct-btn-outline">Re-arm</button>
+                                            </form>
+                                        {% elif alert.acknowledged %}
+                                            <form method="post" action="/my-currencies/alerts/{{ alert.id }}/rearm">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="acct-btn acct-btn-sm acct-btn-outline">Re-arm</button>
+                                            </form>
+                                        {% endif %}
+                                        <form method="post" action="/my-currencies/alerts/{{ alert.id }}/delete">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="acct-btn acct-btn-sm acct-btn-danger">Delete</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="acct-empty-alerts">
+                <p class="acct-empty-text">You have not set any exchange rate alerts. Create an alert above to get notified when rates hit your target threshold.</p>
+            </div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}
+

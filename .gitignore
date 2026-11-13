@@ -12,3 +12,5 @@ instance/
 
 # Backup files
 backup_original/
+# Runtime logs
+*.log

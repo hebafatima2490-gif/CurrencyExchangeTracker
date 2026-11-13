@@ -1,0 +1,105 @@
+{% extends "account_base.html" %}
+
+{% block title %}Personal Dashboard – Currency Exchange Tracker{% endblock %}
+
+{% block account_content %}
+<div class="acct-dashboard">
+    <!-- Welcome Header -->
+    <header class="acct-welcome-header">
+        <div class="acct-welcome-info">
+            <h1 class="acct-welcome-title">Welcome back, <span class="acct-username-highlight">{{ username }}</span></h1>
+            <p class="acct-member-since">
+                <span class="acct-meta-icon" aria-hidden="true">📅</span>
+                Member since: <span class="acct-date-text">{{ created_at }}</span>
+            </p>
+        </div>
+        <div class="acct-welcome-actions">
+            <a href="/" class="acct-action-btn">
+                <span aria-hidden="true">←</span> Return to Live Exchange Rates
+            </a>
+        </div>
+    </header>
+
+    <!-- Triggered Rate Alerts Section -->
+    <section class="acct-section acct-alerts-section" aria-labelledby="acctAlertsHeading">
+        <div class="acct-section-header">
+            <h2 id="acctAlertsHeading" class="acct-section-title">
+                <span class="acct-section-icon" aria-hidden="true">🔔</span> Rate Alerts
+            </h2>
+        </div>
+
+        {% if triggered_alerts and triggered_alerts|length > 0 %}
+            <div class="acct-alerts-list">
+                {% for alert in triggered_alerts %}
+                    <div class="acct-alert-card" role="status">
+                        <div class="acct-alert-badge">
+                            <span class="acct-alert-currency">{{ alert.currency }}</span>
+                            <span class="acct-alert-direction {{ alert.direction }}">{{ alert.direction|upper }}</span>
+                        </div>
+                        <div class="acct-alert-details">
+                            <p class="acct-alert-headline">
+                                Target threshold: <strong>{{ "%.4f"|format(alert.target_rate) }} INR</strong>
+                            </p>
+                            <p class="acct-alert-rate-info">
+                                Triggered at <strong>{{ "%.4f"|format(alert.triggered_rate) }} INR</strong>
+                                <span class="acct-alert-date">(Observation Date: {{ alert.triggered_rate_date or 'Recorded in database' }})</span>
+                            </p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="acct-empty-alerts">
+                <p class="acct-empty-text">No active triggered rate alerts at this time. All watched thresholds are nominal.</p>
+            </div>
+        {% endif %}
+    </section>
+
+    <!-- Summary Cards Grid -->
+    <section class="acct-section acct-summary-section" aria-labelledby="acctSummaryHeading">
+        <h2 id="acctSummaryHeading" class="acct-section-title sr-only">Account Overview</h2>
+        <div class="acct-summary-grid">
+            <!-- 1. Watchlist Currencies -->
+            <a href="/my-currencies" class="acct-card acct-summary-card">
+                <div class="acct-card-icon" aria-hidden="true">⭐</div>
+                <div class="acct-card-body">
+                    <div class="acct-card-count">{{ watchlist_count }}</div>
+                    <div class="acct-card-label">Watchlist Currencies</div>
+                </div>
+                <div class="acct-card-arrow" aria-hidden="true">→</div>
+            </a>
+
+            <!-- 2. Saved Conversions -->
+            <a href="/my-conversions" class="acct-card acct-summary-card">
+                <div class="acct-card-icon" aria-hidden="true">💱</div>
+                <div class="acct-card-body">
+                    <div class="acct-card-count">{{ conversions_count }}</div>
+                    <div class="acct-card-label">Saved Conversions</div>
+                </div>
+                <div class="acct-card-arrow" aria-hidden="true">→</div>
+            </a>
+
+            <!-- 3. Saved Travel Plans -->
+            <a href="/my-travel-plans" class="acct-card acct-summary-card">
+                <div class="acct-card-icon" aria-hidden="true">✈️</div>
+                <div class="acct-card-body">
+                    <div class="acct-card-count">{{ travel_plans_count }}</div>
+                    <div class="acct-card-label">Saved Travel Plans</div>
+                </div>
+                <div class="acct-card-arrow" aria-hidden="true">→</div>
+            </a>
+
+            <!-- 4. Saved Decision History -->
+            <a href="/my-decisions" class="acct-card acct-summary-card">
+                <div class="acct-card-icon" aria-hidden="true">📊</div>
+                <div class="acct-card-body">
+                    <div class="acct-card-count">{{ decisions_count }}</div>
+                    <div class="acct-card-label">Saved Decision History</div>
+                </div>
+                <div class="acct-card-arrow" aria-hidden="true">→</div>
+            </a>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
